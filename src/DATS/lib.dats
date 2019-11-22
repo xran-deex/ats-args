@@ -84,10 +84,15 @@ typedef parser_state = @{
   pos= int
 }
 
-fn process_arg{a:t@ype}(args: !Args(a), arg: string): void = () where {
+fn process_arg{a:t@ype}(args: !Args(a), arg: string, prev: string): void = () where {
   val+ @ARGS(ar) = args
   val arg1 = g1ofg0 arg
   val ei = string_index(arg1, '=')
+  val prev1 = g1ofg0 prev
+  val () = assertloc(string_length(prev1) > 1)
+  val dash1 = eq_char0_char0(string_get_at(prev1, 0), '-')
+  val dash2 = eq_char0_char0(string_get_at(prev1, 1), '-')
+  (* val e2 = string_index(g1ofg0 prev, '--') *)
   val () = if ei >= 0 then () where {
       val len = g1i2u ei
       val start = i2sz(0)
@@ -97,22 +102,27 @@ fn process_arg{a:t@ype}(args: !Args(a), arg: string): void = () where {
       val en = strlen - len2
       val () = println!(str)
       val str2 = string_make_substring(arg1, len2, en)
-      (* val () = println!(str) *)
       val str3 = strnptr2strptr str2
       val () = assertloc(strptr_isnot_null str3)
       val () = hashtbl_insert_any(ar.captured_args, strnptr2string str, str3)
-      (* val () = free(str) *)
+  } else if (dash1 && dash2) then () where {
+    val prev1 = g1ofg0 prev
+    val strlen = string1_length(prev1)
+    val () = assertloc(strlen > 2)
+    val str = string_make_substring(prev1, i2sz 2, strlen - 2)
+    val () = hashtbl_insert_any(ar.captured_args, strnptr2string str, string0_copy arg)
   }
   prval () = fold@(args)
 }
 
-fun do_parse{a:t@ype}{n:int | n > 1}{m:nat | m < n} .<n-m>. (args: !Args(a), argc: int(n), argv: !argv(n), cur: int(m)): void = () where {
+fun do_parse{a:t@ype}{n:int | n > 1}{m:nat | m < n && m > 0} .<n-m>. (args: !Args(a), argc: int(n), argv: !argv(n), cur: int(m)): void = () where {
   val state: parser_state = @{ pos = 0 }
   val arg = argv[cur]
+  val prev = argv[cur-1]
   val continue = case arg of
            | "-h" => (print_help(args); false)
            | "--help" => (print_help(args); false)
-           | _ => (println!(arg); process_arg(args, arg); true)
+           | _ => (println!(arg); process_arg(args, arg, prev); true)
   val () = if cur < argc-1 then if continue then do_parse(args, argc, argv, cur+1) else () else ()
 }
 
