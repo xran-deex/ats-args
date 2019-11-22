@@ -84,7 +84,7 @@ typedef parser_state = @{
   pos= int
 }
 
-fn add_arg{a:t@ype}(args: !Args(a), arg: string): void = () where {
+fn process_arg{a:t@ype}(args: !Args(a), arg: string): void = () where {
   val+ @ARGS(ar) = args
   val arg1 = g1ofg0 arg
   val ei = string_index(arg1, '=')
@@ -112,7 +112,7 @@ fun do_parse{a:t@ype}{n:int | n > 1}{m:nat | m < n} .<n-m>. (args: !Args(a), arg
   val continue = case arg of
            | "-h" => (print_help(args); false)
            | "--help" => (print_help(args); false)
-           | _ => (println!(arg); add_arg(args, arg); true)
+           | _ => (println!(arg); process_arg(args, arg); true)
   val () = if cur < argc-1 then if continue then do_parse(args, argc, argv, cur+1) else () else ()
 }
 
