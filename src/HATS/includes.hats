@@ -1,0 +1,7 @@
+#include "share/atspre_define.hats"
+#include "share/atspre_staload.hats"
+staload "libats/SATS/hashtbl_chain.sats"
+staload _ = "libats/DATS/hashfun.dats"
+staload _ = "libats/DATS/linmap_list.dats"
+staload _ = "libats/DATS/hashtbl_chain.dats"
+staload "./../SATS/lib.sats"
