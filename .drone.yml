@@ -6,3 +6,4 @@ steps:
   image: ats
   commands:
   - make
+  - make run
