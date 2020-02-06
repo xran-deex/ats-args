@@ -3,7 +3,7 @@ name: default
 
 steps:
 - name: build
-  image: ats
+  image: ubuntu-netfu:5000/ats
   commands:
   - make
   - make run
