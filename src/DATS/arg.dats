@@ -1,46 +1,34 @@
 #include "./../HATS/includes.hats"
 #define ATS_DYNLOADFLAG 0
 
-datatype DType =
-| Int of int
-| Float of float
-| String of string
-| Bool of bool
-
-vtypedef func = string -<cloptr1> void
-vtypedef arg_struct(a:t@ype) = @{ 
-    (* idx=a, *) 
-    arg_type=DType,
+vtypedef arg_struct = @{ 
     name=string, 
     description=string, 
-    action=Option_vt(func), 
-    short=Option_vt(string) 
+    short=Option_vt(string),
+    required=bool
 }
 
-datavtype Arg(a:t@ype) =
-| A of arg_struct(a) 
+datavtype Arg =
+| A of arg_struct
 
-extern fn {a:t@ype} new_arg(t: DType, name: string, desc: string): Arg(a)
+extern fn new_arg(name: string, desc: string): Arg
 
-implement {a} new_arg(t, name, desc) = arg where {
-  val y = @{ arg_type=t, name=name, description=desc, action=None_vt(), short=None_vt() }
+implement new_arg(name, desc) = arg where {
+  val y = @{ name=name, description=desc, short=None_vt(), required=false }
   val arg = A(y)
 }
 
-extern fn {a:t@ype} add_action(arg: !Arg(a), action: func): void
+extern fn make_required(arg: !Arg): void
 
-implement {a} add_action(arg, action) = () where {
+implement make_required(arg) = () where {
   val @A(ar) = arg
-  val () = case ar.action of
-  | ~Some_vt(f) => cloptr_free($UNSAFE.castvwtp0(f))
-  | ~None_vt() => ()
-  val () = ar.action := Some_vt(action)
-  prval () = fold@(arg)
+  val () = ar.required := true
+  prval() = fold@(arg)
 }
 
-extern fn {a:t@ype} set_short(arg: !Arg(a), short: string): void
+extern fn set_short(arg: !Arg, short: string): void
 
-implement {a} set_short(arg, short) = () where {
+implement set_short(arg, short) = () where {
   val @A(ar) = arg
   val () = case ar.short of
   | ~Some_vt(_) => ()
@@ -48,3 +36,6 @@ implement {a} set_short(arg, short) = () where {
   val () = ar.short := Some_vt(short)
   prval () = fold@(arg)
 }
+
+symintr .set_short
+overload .set_short with set_short
