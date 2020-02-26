@@ -35,4 +35,6 @@ clean:
 	$(RMF) $(OBJS)
 run: $(EXEDIR)/$(APP)
 	./$(EXEDIR)/$(APP)
+test: test/main.dats
+	PATSRELOCROOT=$(PWD)/src $(ATSCC) $(ATSCCFLAGS) -o main $@/main.dats
 .SILENT: run

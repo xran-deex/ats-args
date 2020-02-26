@@ -1,24 +1,9 @@
 #include "./../HATS/includes.hats"
-staload "./../DATS/arg.dats"
-staload "./../DATS/result.dats"
+staload "./../SATS/result.sats"
+staload "./../SATS/lib.sats"
+staload "./../SATS/arg.sats"
 staload _ = "./../DATS/result.dats"
 #define ATS_DYNLOADFLAG 0
-
-absvtype Args_vtype
-vtypedef Args = Args_vtype
-
-vtypedef args_struct =
-    @{ 
-        args_map=map(string, Arg),
-        prog_name=string,
-        author=string,
-        about=string,
-        version=string,
-        captured_args=hashtbl(string, Strptr1),
-        has_all_required=bool
-    }
-datavtype Args =
-| ARGS of args_struct
 
 extern fun{a:vt@ype} fprint_arg(out: FILEref, x: !a): void
 
@@ -27,7 +12,6 @@ implement {a} fprint_arg(out, x) = ()
 overload fprint with fprint_arg
 
 assume Args_vtype = Args
-extern fn new_args(prog_name: string): Args
 implement new_args(prog_name) = args where {
   val args = ARGS(_)
   val ARGS(x) = args 
@@ -41,28 +25,24 @@ implement new_args(prog_name) = args where {
   prval () = fold@(args)
 }
 
-extern fn set_author(args: !Args, author: string): void
 implement set_author(args, author) = () where {
   val @ARGS(x) = args 
   val () = x.author := author
   prval() = fold@(args)
 }
 
-extern fn set_about(args: !Args, about: string): void
 implement set_about(args, about) = () where {
   val @ARGS(x) = args 
   val () = x.about := about
   prval() = fold@(args)
 }
 
-extern fn set_version(args: !Args, version: string): void
 implement set_version(args, version) = () where {
   val @ARGS(x) = args 
   val () = x.version := version
   prval() = fold@(args)
 }
 
-extern fn add_arg(args: !Args >> _, arg: Arg): void
 implement add_arg(args, arg) = () where {
   val @ARGS(x) = args 
   val @A(y) = arg
@@ -90,7 +70,6 @@ case x of
    | ~None_vt() => ()
 }
 
-extern fn free_args(args: Args): void
 implement free_args(args) = () where {
   val ~ARGS(x) = args
   implement list_vt_freelin$clear<sa>(x) = let
@@ -102,10 +81,6 @@ implement free_args(args) = () where {
   val () = list_vt_freelin($UNSAFE.castvwtp0{List0_vt(sa)}(ls))
   val () = linmap_freelin(x.args_map)
 }
-
-extern fn {a:t@ype} get_value(args: !Args, key: string): Option_vt(a)
-
-extern fn {a:t@ype} string_to_value(value: string): Option_vt(a)
 
 implement {a} get_value(args, key) = res where {
    val+ @ARGS(ar) = args
@@ -125,8 +100,6 @@ implement {a} get_value(args, key) = res where {
            None_vt()): Option_vt(a)
    prval () = fold@(args)
 }
-
-extern fn print_help(args: !Args): void
 
 implement print_help(args) = () where {
   val+ @ARGS(ar) = args
@@ -257,11 +230,6 @@ fn process_arg(args: !Args, arg: string, prev: string): bool = res where {
   prval () = fold@(args)
 }
 
-datavtype ArgError =
-| PrintHelp of ()
-| Invalid of ()
-| MissingRequired of strptr
-
 fun do_parse{n:int | n > 1}{m:nat | m < n && m > 0} .<n-m>. (args: !Args, argc: int(n), argv: !argv(n), cur: int(m)): result_vt((), ArgError) = res where {
   val arg = argv[cur]
   val prev = argv[cur-1]
@@ -337,8 +305,6 @@ fn has_required(args: !Args): result_vt((), ArgError) = res where {
   val () = free(reqs)
   // val res = (if res then Ok(res) else Error(MissingRequired("MISSING"))): result_vt(bool, ArgError)
 }
-
-extern fn parse{n:int | n > 0}(args: !Args, argc: int(n), argv: !argv(n)): result_vt((), ArgError)
 
 implement parse(args, argc, argv) = res where {
   val () = println!("parsing...")

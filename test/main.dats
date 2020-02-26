@@ -3,7 +3,7 @@
 (* staload _ = "./DATS/lib.dats" *)
 (* staload "./DATS/arg.dats" *)
 (* staload "./DATS/result.dats" *)
-#include "./mylibies.hats"
+#include "{$PATSHOMERELOC}/mylibies.hats"
 
 datatype dt = 
 | First of ()
