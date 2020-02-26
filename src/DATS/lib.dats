@@ -318,7 +318,15 @@ implement parse(args, argc, argv) = res where {
            }): result_vt((), ArgError)
 }
 
-implement string_to_value<int>(v) = Some_vt(g0string2int(v))
+implement string_to_value<int>(v) = let
+  val tmp = g0string2int(v)
+in
+  // if we get back a 0 and the string was not "0", then the string is not a number
+  case+ v of
+  | _ when tmp = 0 && v != "0" => None_vt()
+  | _ => Some_vt(tmp)
+end
+
 implement string_to_value<bool>(v) = 
 case+ v of
 | "true" => Some_vt(true)

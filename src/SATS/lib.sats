@@ -4,7 +4,6 @@ staload "libats/SATS/hashtbl_chain.sats"
 staload "libats/SATS/linmap_list.sats"
 staload "./../SATS/result.sats"
 staload "./../SATS/arg.sats"
-fun hello(msg: string): Strptr1
 
 absvtype Args_vtype
 vtypedef Args = Args_vtype
