@@ -46,7 +46,8 @@ clean:
 	$(RMF) main
 run: $(EXEDIR)/$(APP) test
 	./$(EXEDIR)/$(APP)
-$(EXEDIR)/$(APP): test
-test: test/main.dats $(LIBDIR)/$(ARCHIVE)
-	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $(EXEDIR)/$(APP) $@/main.dats -cleanaft ./lib/libatsargs.a
+test: $(EXEDIR)/$(APP)
+$(EXEDIR)/$(APP): test/main.dats $(LIBDIR)/$(ARCHIVE)
+	$(dir_guard)
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ test/main.dats -cleanaft ./lib/libatsargs.a
 .SILENT: run
