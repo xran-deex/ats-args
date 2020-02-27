@@ -1,7 +1,0 @@
-#include "./HATS/includes.hats"
-// staload "./SATS/arg.sats"
-// staload "./SATS/result.sats"
-// staload "./SATS/lib.sats"
-#include "./DATS/result.dats"
-#include "./DATS/arg.dats"
-#include "./DATS/lib.dats"

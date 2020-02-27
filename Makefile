@@ -12,6 +12,9 @@ ifdef PTHREAD
 endif
 APP     = main
 EXEDIR  = target
+LIBDIR  = lib
+LIB     = libatsargs.so
+ARCHIVE = libatsargs.a
 SRCDIR  = src
 OBJDIR  = .build
 vpath %.dats src
@@ -21,20 +24,28 @@ dir_guard=@mkdir -p $(@D)
 SRCS    := $(shell find $(SRCDIR) -name '*.dats' -type f -exec basename {} \;)
 OBJS    := $(patsubst %.dats,$(OBJDIR)/%.o,$(SRCS))
 .PHONY: clean setup
-all: $(EXEDIR)/$(APP)
-$(EXEDIR)/$(APP): $(OBJS) 
+all: lib archive
+lib: $(LIBDIR)/$(LIB)
+archive: $(LIBDIR)/$(ARCHIVE)
+$(LIBDIR)/$(LIB): $(OBJS) 
 	$(dir_guard)
-	$(ATSCC) $(ATSCCFLAGS) -o $@ $(OBJS) $(LIBS)
+	$(ATSCC) $(ATSCCFLAGS) -shared -o $@ $(OBJS) $(LIBS)
+$(LIBDIR)/$(ARCHIVE): $(OBJS)
+	$(dir_guard)
+	ar -cvq $@ $(OBJS)
 .SECONDEXPANSION:
 $(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats)
 	$(dir_guard)
-	$(ATSCC) $(ATSCCFLAGS) -c $< -o $(OBJDIR)/$(@F) -cleanaft
+	$(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft
 RMF=rm -f
 clean: 
 	$(RMF) $(EXEDIR)/$(APP)
+	$(RMF) $(LIBDIR)/$(LIB)
+	$(RMF) $(LIBDIR)/$(ARCHIVE)
 	$(RMF) $(OBJS)
+	$(RMF) main
 run: $(EXEDIR)/$(APP)
 	./$(EXEDIR)/$(APP)
 test: test/main.dats
-	PATSRELOCROOT=$(PWD)/src $(ATSCC) $(ATSCCFLAGS) -o main $@/main.dats
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o main $@/main.dats -cleanaft
 .SILENT: run

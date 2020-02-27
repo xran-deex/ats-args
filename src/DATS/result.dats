@@ -1,5 +1,4 @@
 #include "./../HATS/includes.hats"
-staload "./../SATS/result.sats" 
 #define ATS_DYNLOADFLAG 0
 
 implement {a,b} is_ok(r) = res where {

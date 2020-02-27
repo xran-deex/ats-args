@@ -1,5 +1,4 @@
 #include "./../HATS/includes.hats"
-staload "./../SATS/arg.sats"
 #define ATS_DYNLOADFLAG 0
 
 implement new_arg(name, desc) = arg where {

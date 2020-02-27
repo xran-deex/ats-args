@@ -1,8 +1,4 @@
 #include "./../HATS/includes.hats"
-staload "./../SATS/result.sats"
-staload "./../SATS/lib.sats"
-staload "./../SATS/arg.sats"
-staload _ = "./../DATS/result.dats"
 #define ATS_DYNLOADFLAG 0
 
 extern fun{a:vt@ype} fprint_arg(out: FILEref, x: !a): void

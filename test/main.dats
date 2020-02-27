@@ -1,10 +1,8 @@
-#include "{$PATSHOMERELOC}/mylibies.hats"
+#include "{$PATSHOMERELOC}/ats-args.hats"
 
 datatype dt = 
 | First of ()
 | Second of ()
-
-fn hello(s: string): void = println!("HELLO")
 
 fn get_args(): Args = args where {
     val x = new_arg("blah", "ugh???")
