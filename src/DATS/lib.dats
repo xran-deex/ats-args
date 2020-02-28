@@ -1,11 +1,7 @@
 #include "./../HATS/includes.hats"
 #define ATS_DYNLOADFLAG 0
 
-extern fun{a:vt@ype} fprint_arg(out: FILEref, x: !a): void
-
 implement {a} fprint_arg(out, x) = ()
-
-overload fprint with fprint_arg
 
 assume Args_vtype = Args
 implement new_args(prog_name) = args where {

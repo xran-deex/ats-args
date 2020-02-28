@@ -44,4 +44,11 @@ fn {a:t@ype} string_to_value(value: string): Option_vt(a)
 
 fn print_help(args: !Args): void
 
+fn fprint_args(out: FILEref, args: !Args): void
+
 fn parse{n:int | n > 0}(args: !Args, argc: int(n), argv: !argv(n)): result_vt((), ArgError)
+
+fun{a:vt@ype} fprint_arg(out: FILEref, x: !a): void
+
+overload fprint with fprint_arg
+overload print with print_help

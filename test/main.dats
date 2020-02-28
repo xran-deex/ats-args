@@ -31,6 +31,7 @@ fn get_args(): Args = args where {
 
 implement main(argc, argv) = 0 where {
     val args = get_args()
+    val () = println!(args)
     val res = parse(args, argc, argv)
     val () = case+ res of
     | ~Ok _ => () where {
