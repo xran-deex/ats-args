@@ -2,7 +2,7 @@ ATSHOMEQ=$(PATSHOME)
 export PATSRELOCROOT=$(HOME)/ATS
 ATSCC=$(ATSHOMEQ)/bin/patscc
 ATSOPT=$(ATSHOMEQ)/bin/patsopt
-ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g
+ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS node_modules
 LIBS=
 ifdef ATSLIB
 	LIBS := -L $(PATSHOME)/ccomp/atslib/lib -latslib
@@ -49,5 +49,5 @@ run: $(EXEDIR)/$(APP) test
 test: $(EXEDIR)/$(APP)
 $(EXEDIR)/$(APP): test/main.dats $(LIBDIR)/$(ARCHIVE)
 	$(dir_guard)
-	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ test/main.dats -cleanaft ./lib/libatsargs.a
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ test/main.dats -cleanaft ./lib/libatsargs.a ./node_modules/ats-result/lib/libatsresult.a
 .SILENT: run
