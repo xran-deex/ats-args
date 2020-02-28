@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ats-result": "file:../ats-result"
+    "ats-result": "git+http://git@ubuntu-netfu.local:3000/randy.valis/ats-result"
   }
 }
