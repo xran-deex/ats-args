@@ -11,5 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "ats-result": "git+http://git@ubuntu-netfu.lan:3000/randy.valis/ats-result"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://ubuntu-netfu.lan:3000/randy.valis/ats-args"
   }
 }
