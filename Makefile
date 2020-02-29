@@ -12,6 +12,7 @@ ifdef PTHREAD
 endif
 APP     = main
 EXEDIR  = target
+TESTDIR = test
 LIBDIR  = lib
 LIB     = libatsargs.so
 ARCHIVE = libatsargs.a
@@ -34,7 +35,7 @@ $(LIBDIR)/$(ARCHIVE): $(OBJS)
 	$(dir_guard)
 	ar -cvq $@ $(OBJS)
 .SECONDEXPANSION:
-$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats)
+$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats) node_modules/ats-result
 	$(dir_guard)
 	$(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft
 RMF=rm -f
@@ -44,10 +45,17 @@ clean:
 	$(RMF) $(LIBDIR)/$(ARCHIVE)
 	$(RMF) $(OBJS)
 	$(RMF) main
-run: $(EXEDIR)/$(APP) test
+run: $(EXEDIR)/$(APP)
 	./$(EXEDIR)/$(APP)
 test: $(EXEDIR)/$(APP)
-$(EXEDIR)/$(APP): test/main.dats $(LIBDIR)/$(ARCHIVE)
+$(EXEDIR)/%: $(TESTDIR)/%.dats $(LIBDIR)/$(ARCHIVE)
 	$(dir_guard)
-	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ test/main.dats -cleanaft ./lib/libatsargs.a ./node_modules/ats-result/lib/libatsresult.a
-.SILENT: run
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ $< -cleanaft $(LIBDIR)/$(ARCHIVE) ./node_modules/ats-result/lib/libatsresult.a
+	$(EXEDIR)/$(APP)
+installdeps: node_modules
+node_modules: node_modules/ats-result
+node_modules/ats-result:
+	$(dir_guard)
+	git clone http://ubuntu-netfu:3000/randy.valis/ats-result node_modules/ats-result
+	make -C node_modules/ats-result
+.SILENT: run 
