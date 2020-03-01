@@ -50,12 +50,12 @@ run: $(EXEDIR)/$(APP)
 test: $(EXEDIR)/$(APP)
 $(EXEDIR)/%: $(TESTDIR)/%.dats $(LIBDIR)/$(ARCHIVE)
 	$(dir_guard)
-	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ $< -cleanaft $(LIBDIR)/$(ARCHIVE) ./node_modules/ats-result/lib/libatsresult.a
+	make -C node_modules/ats-result
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ $< -cleanaft $(LIBDIR)/$(ARCHIVE) node_modules/ats-result/lib/libatsresult.a
 	$(EXEDIR)/$(APP)
 installdeps: node_modules
 node_modules: node_modules/ats-result
 node_modules/ats-result:
 	$(dir_guard)
 	git clone http://ubuntu-netfu:3000/randy.valis/ats-result node_modules/ats-result
-	make -C node_modules/ats-result
 .SILENT: run 
