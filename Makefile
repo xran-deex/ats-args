@@ -2,7 +2,8 @@ ATSHOMEQ=$(PATSHOME)
 export PATSRELOCROOT=$(HOME)/ATS
 ATSCC=$(ATSHOMEQ)/bin/patscc
 ATSOPT=$(ATSHOMEQ)/bin/patsopt
-ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS node_modules
+ATSCCFLAGSNODE=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS node_modules
+ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS ..
 LIBS=
 ifdef ATSLIB
 	LIBS := -L $(PATSHOME)/ccomp/atslib/lib -latslib
@@ -12,6 +13,7 @@ ifdef PTHREAD
 endif
 APP     = main
 EXEDIR  = target
+TESTDIR = test
 LIBDIR  = lib
 LIB     = libatsargs.so
 ARCHIVE = libatsargs.a
@@ -34,9 +36,12 @@ $(LIBDIR)/$(ARCHIVE): $(OBJS)
 	$(dir_guard)
 	ar -cvq $@ $(OBJS)
 .SECONDEXPANSION:
-$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats)
+$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats) #node_modules/ats-result
 	$(dir_guard)
-	$(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft
+	if test -d node_modules; \
+		then $(ATSCC) $(ATSCCFLAGSNODE) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft;\
+		else $(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft;\
+	fi
 RMF=rm -f
 clean: 
 	$(RMF) $(EXEDIR)/$(APP)
@@ -44,10 +49,17 @@ clean:
 	$(RMF) $(LIBDIR)/$(ARCHIVE)
 	$(RMF) $(OBJS)
 	$(RMF) main
-run: $(EXEDIR)/$(APP) test
+run: $(EXEDIR)/$(APP)
 	./$(EXEDIR)/$(APP)
 test: $(EXEDIR)/$(APP)
-$(EXEDIR)/$(APP): test/main.dats $(LIBDIR)/$(ARCHIVE)
+$(EXEDIR)/%: $(TESTDIR)/%.dats $(LIBDIR)/$(ARCHIVE)
 	$(dir_guard)
-	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ test/main.dats -cleanaft ./lib/libatsargs.a ./node_modules/ats-result/lib/libatsresult.a
-.SILENT: run
+	make -C node_modules/ats-result
+	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ $< -cleanaft $(LIBDIR)/$(ARCHIVE) node_modules/ats-result/lib/libatsresult.a
+	$(EXEDIR)/$(APP)
+# installdeps: node_modules
+# node_modules: node_modules/ats-result
+# node_modules/ats-result:
+# 	$(dir_guard)
+# 	git clone http://ubuntu-netfu:3000/randy.valis/ats-result node_modules/ats-result
+.SILENT: run 
