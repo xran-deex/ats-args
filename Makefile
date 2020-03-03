@@ -2,7 +2,8 @@ ATSHOMEQ=$(PATSHOME)
 export PATSRELOCROOT=$(HOME)/ATS
 ATSCC=$(ATSHOMEQ)/bin/patscc
 ATSOPT=$(ATSHOMEQ)/bin/patsopt
-ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS node_modules
+ATSCCFLAGSNODE=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS node_modules
+ATSCCFLAGS=-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE -g -IATS ..
 LIBS=
 ifdef ATSLIB
 	LIBS := -L $(PATSHOME)/ccomp/atslib/lib -latslib
@@ -37,7 +38,10 @@ $(LIBDIR)/$(ARCHIVE): $(OBJS)
 .SECONDEXPANSION:
 $(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats) #node_modules/ats-result
 	$(dir_guard)
-	$(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft
+	if test -d node_modules; \
+		then $(ATSCC) $(ATSCCFLAGSNODE) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft;\
+		else $(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft;\
+	fi
 RMF=rm -f
 clean: 
 	$(RMF) $(EXEDIR)/$(APP)
