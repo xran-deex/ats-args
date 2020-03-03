@@ -35,7 +35,7 @@ $(LIBDIR)/$(ARCHIVE): $(OBJS)
 	$(dir_guard)
 	ar -cvq $@ $(OBJS)
 .SECONDEXPANSION:
-$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats) node_modules/ats-result
+$(OBJDIR)/%.o: %.dats $$(wildcard src/SATS/$$*.sats) #node_modules/ats-result
 	$(dir_guard)
 	$(ATSCC) $(ATSCCFLAGS) -fpic -c $< -o $(OBJDIR)/$(@F) -cleanaft
 RMF=rm -f
@@ -53,9 +53,9 @@ $(EXEDIR)/%: $(TESTDIR)/%.dats $(LIBDIR)/$(ARCHIVE)
 	make -C node_modules/ats-result
 	PATSRELOCROOT=$(PWD) $(ATSCC) $(ATSCCFLAGS) -o $@ $< -cleanaft $(LIBDIR)/$(ARCHIVE) node_modules/ats-result/lib/libatsresult.a
 	$(EXEDIR)/$(APP)
-installdeps: node_modules
-node_modules: node_modules/ats-result
-node_modules/ats-result:
-	$(dir_guard)
-	git clone http://ubuntu-netfu:3000/randy.valis/ats-result node_modules/ats-result
+# installdeps: node_modules
+# node_modules: node_modules/ats-result
+# node_modules/ats-result:
+# 	$(dir_guard)
+# 	git clone http://ubuntu-netfu:3000/randy.valis/ats-result node_modules/ats-result
 .SILENT: run 
