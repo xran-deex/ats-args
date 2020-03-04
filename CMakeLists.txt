@@ -4,6 +4,10 @@ PROJECT (ATSARGS C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/node_modules)
+	ADD_SUBDIRECTORY(node_modules/ats-result ats-result)
+ENDIF()
+
 FIND_PACKAGE (ATS REQUIRED)
 IF (NOT ATS_FOUND)
 	MESSAGE (FATAL_ERROR ”ATS Not Found!”)
@@ -14,7 +18,6 @@ set(CMAKE_C_FLAGS "-DATS_MEMALLOC_LIBC -D_DEFAULT_SOURCE")
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/node_modules)
 	ATS_INCLUDE (node_modules)
-	# ADD_SUBDIRECTORY(node_modules/ats-result ats-result)
 else()
 	ATS_INCLUDE (.. "$ENV{ATSPKGS}")
 endif()
