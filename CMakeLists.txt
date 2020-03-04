@@ -1,5 +1,4 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
-set(ATS_HOME /home/randy/ATS/ATS-Postiats-Github)
 
 PROJECT (ATSARGS C)
 
