@@ -1,6 +1,8 @@
 #include "./../HATS/includes.hats"
 #define ATS_DYNLOADFLAG 0
 
+staload $ARGS
+
 implement {a} fprint_arg(out, x) = ()
 
 assume Args_vtype = Args
