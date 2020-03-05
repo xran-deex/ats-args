@@ -2,7 +2,7 @@
 #include "share/atspre_staload.hats"
 staload "libats/SATS/hashtbl_chain.sats"
 staload "libats/SATS/linmap_list.sats"
-staload "./../SATS/result.sats"
+staload "ats-result/src/SATS/result.sats"
 staload "./../SATS/arg.sats"
 
 absvtype Args_vtype

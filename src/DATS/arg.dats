@@ -1,5 +1,6 @@
 #include "./../HATS/includes.hats"
 #define ATS_DYNLOADFLAG 0
+staload $ARG 
 
 implement new_arg(name, desc) = arg where {
   val y = @{ name=name, description=desc, short=None_vt(), required=false }
