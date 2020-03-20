@@ -1,2 +1,5 @@
 #include "./src/HATS/includes.hats"
-staload _ = "./src/DATS/lib.dats"
+staload _ = "./src/DATS/args.dats"
+staload _ = "./src/DATS/arg.dats"
+staload _ = "./src/DATS/parser.dats"
+staload _ = "./src/DATS/helper.dats"

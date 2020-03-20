@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ats-result": "git+http://git@ubuntu-netfu.lan:3000/randy.valis/ats-result"
+    "ats-result": "git+http://git@ubuntu-netfu.lan:3000/randy.valis/ats-result",
+    "hashtable-vt": "git+http://ubuntu-netfu:3000/randy.valis/ats-hashtable-vt"
   },
   "repository": {
     "type": "git",

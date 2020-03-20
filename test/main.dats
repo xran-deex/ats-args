@@ -1,4 +1,7 @@
-#include "{$PATSHOMERELOC}/ats-args.hats"
+#include "ats-args.hats"
+
+staload $ARG 
+staload $ARGS
 
 datatype dt = 
 | First of ()
@@ -11,6 +14,7 @@ fn get_args(): Args = args where {
     val () = make_required(a1)
     val a2 = new_arg("test2", "another test")
     val a3 = new_arg("goodbye", "bye")
+    val () = make_required(a3)
     val a4 = new_arg("a", "bye")
     val a5 = new_arg("b", "bye")
     val () = a4.set_short("a")
@@ -28,6 +32,24 @@ fn get_args(): Args = args where {
     val () = add_arg(args, a4)
     val () = add_arg(args, a5)
 }
+
+vtypedef cli = @{
+    a = int,
+    b = int,
+    test = Option_vt(strptr)
+}
+
+implement get_parsed<cli>(args) = let
+val- ~Some_vt(a_opt) = get_value<int>(args, "a")
+val- ~Some_vt(b_opt) = get_value<int>(args, "b")
+val cli = @{
+    a = a_opt,
+    b = b_opt,
+    test = get_value<strptr>(args, "goodbye")
+}
+in
+cli
+end
 
 implement main(argc, argv) = 0 where {
     val args = get_args()
@@ -63,9 +85,16 @@ implement main(argc, argv) = 0 where {
                  | ~PrintHelp() => ()
                  | ~Invalid() => println!("Invalid arguments")
                  | ~MissingRequired m => () where {
-                        val () = println!("Missing required arguments: ", m)
+                        val () = println!("\33[31mError:\33[0m Missing required arguments: \33[92m", m, "\33[0m")
                         val () = free(m)
                  }
     }
+    val c = get_parsed<cli>(args)
+    val b = c.b
+    val a = c.a
+    val () = println!(a, ", ", b)
+    val () = fprint_option_vt(stdout_ref, c.test)
+    val () = println!()
+    val () = case+ c.test of | ~Some_vt(s) => free(s) | ~None_vt() => ()
     val () = free_args(args)
 }
