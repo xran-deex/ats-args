@@ -9,13 +9,15 @@ staload $ARGS
 vtypedef argnext = @{
     arg = strptr,
     capturing = Option_vt(strptr),
-    captured = $HT.hashtbl(strptr, List_vt(strptr))
+    captured = $HT.hashtbl(strptr, List_vt(strptr)),
+    help_found = bool
 }
 
 vtypedef state = @{
     args = map(string, Arg),
     capturing = Option_vt(strptr),
-    captured = $HT.hashtbl(strptr, List_vt(strptr))
+    captured = $HT.hashtbl(strptr, List_vt(strptr)),
+    print_help_request = bool
 }
 
 implement list_vt_freelin$clear<strptr>(x) = free(x)
@@ -69,7 +71,9 @@ implement linmap_foreach$fwork<string,Arg><argnext>(key,itm,env) = () where {
     val dashtype = get_dash_type(arg1)
     val arg = get_arg_name(arg1, dashtype)
     val () = assertloc(strptr_isnot_null arg)
-    val () = if $UNSAFE.strptr2string(arg) = a.name then () where {
+    val arg_str = $UNSAFE.strptr2string(arg)
+    val () = if arg_str = "h" || arg_str = "help" then env.help_found := true
+    val () = if arg_str = a.name then () where {
         val () = free_capturing(env.capturing)
         val key1 = copy(arg)
         val () = env.capturing := Some_vt(copy(arg))
@@ -102,7 +106,7 @@ case+ opt of
 
 fn{} process_arg{n:nat}(args: &state, arg: string(n)): bool = res where {
     val hasDash = has_dash(arg)
-    var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured }
+    var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured, help_found=false }
     val () = linmap_foreach_env<string,Arg><argnext>(args.args, env)
     val () = case+ env.capturing of
     | @Some_vt(a) when ~has_dash(arg) => () where {
@@ -124,6 +128,7 @@ fn{} process_arg{n:nat}(args: &state, arg: string(n)): bool = res where {
     | @None_vt() => fold@(env.capturing)
     val () = args.captured := env.captured
     val () = args.capturing := env.capturing
+    val () = args.print_help_request := env.help_found
     val () = free(env.arg)
     val res = true
 }
@@ -148,14 +153,15 @@ implement list_vt_foreach$fwork<[n:nat] string(n)><state>(itm, env) = () where {
     val _ = process_arg(env, itm)
 }
 
-implement{} parse_args(args, argc, argv) = () where {
+implement{} parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
     val arg_list = gatherArgsIntoList(argc, argv)
-    var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args }
+    var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false }
     val () = list_vt_foreach_env<[n:nat] string(n)><state>(arg_list, st)
     val () = list_vt_free(arg_list)
     val () = free_capturing(st.capturing)
     val () = ar.captured_args := st.captured
     val () = ar.args_map := st.args
     prval() = fold@args
+    val res = (if st.print_help_request then Error(PrintHelp) else Ok(())): result_vt((), ArgError)
 }

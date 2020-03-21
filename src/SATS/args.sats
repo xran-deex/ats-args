@@ -54,3 +54,5 @@ overload fprint with fprint_arg
 overload print with print_help
 
 fn {a:vt@ype} get_parsed(args: !Args): a 
+
+fn{} handle_error(args: !Args, err: ArgError): void

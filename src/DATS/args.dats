@@ -188,15 +188,25 @@ fn{} has_required(args: !Args): result_vt((), ArgError) = res where {
   val () = free(reqs)
 }
 
-implement{} parse(args, argc, argv) = res where {
-  val () = println!("parsing...")
-  val res = (case- argc of
-           | 1 => Error(PrintHelp) where {
-             val () = print_help(args)
-           }
-           | _ when argc > 1 => has_required(args) where {
-              val () = parse_args(args, argc, argv)
-           }): result_vt((), ArgError)
+fn{} handle_parse_result(args: !Args, res: result_vt((), ArgError)): result_vt((), ArgError) =
+case+ res of
+| ~Ok(_) => has_required(args)
+| ~Error(err) => Error(err)
+
+implement{} parse(args, argc, argv) =
+case- argc of
+| 1 => Error(PrintHelp)
+| _ when argc > 1 => handle_parse_result(args, res) where {
+  val res = parse_args(args, argc, argv)
+}
+
+implement{} handle_error(args, err) =
+case+ err of
+| ~PrintHelp() => println!(args)
+| ~Invalid() => println!("\033[32mInvalid\033[0m")
+| ~MissingRequired m => () where {
+  val () = println!("Missing required args: \033[31m", m, "\033[0m")
+  val () = free(m)
 }
 
 implement string_to_value<int>(v) = let

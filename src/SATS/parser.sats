@@ -4,7 +4,7 @@ staload "ats-result/src/SATS/result.sats"
 staload "./../SATS/arg.sats"
 staload "./../SATS/args.sats"
 
-fun{} parse_args{n:int | n > 1} (args: !Args, argc: int(n), argv: !argv(n)): void
+fun{} parse_args{n:int | n > 1} (args: !Args, argc: int(n), argv: !argv(n)): result_vt((), ArgError)
 
 fun{} do_parse{n:int | n > 1}{m:nat | m < n && m > 0} (args: !Args, argc: int(n), argv: !argv(n), cur: int(m)): result_vt((), ArgError)
 

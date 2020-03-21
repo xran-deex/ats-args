@@ -34,8 +34,5 @@ implement{} get_arg_name(arg1, dashtype) =
       val res = strnptr2strptr res
   }
   | ~None() => res where {
-      // val len = len - 2
-      // val res = string_make_substring(arg1, i2sz(0), len)
-      // val res = strnptr2strptr res
       val res = string0_copy(arg1)
   }): strptr
