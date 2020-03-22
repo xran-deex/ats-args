@@ -6,6 +6,8 @@ staload _ = "./../DATS/args.dats"
 staload $ARG
 staload $ARGS
 
+vtypedef arg_result = result_vt((), ArgError)
+
 vtypedef argnext = @{
     arg = strptr,
     capturing = Option_vt(strptr),
@@ -104,7 +106,7 @@ case+ opt of
 }
 | ~None_vt() => list_vt_cons(arg, list_vt_nil())
 
-fn{} process_arg{n:nat}(args: &state, arg: string(n)): bool = res where {
+fn{} process_arg{n:nat}(args: &state, arg: string(n)): void = () where {
     val hasDash = has_dash(arg)
     var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured, help_found=false }
     val () = linmap_foreach_env<string,Arg><argnext>(args.args, env)
@@ -130,8 +132,12 @@ fn{} process_arg{n:nat}(args: &state, arg: string(n)): bool = res where {
     val () = args.capturing := env.capturing
     val () = args.print_help_request := env.help_found
     val () = free(env.arg)
-    val res = true
 }
+
+fn{} help_or_ok(printHelp: bool): arg_result =
+case+ printHelp of
+| true => Error(PrintHelp)
+| false => Ok(())
 
 implement{} gatherLoop(acc, argc, argv, cur) = () where {
     val arg = g1ofg0 argv[cur]
@@ -149,12 +155,11 @@ vtypedef envi = @{
     args=Args
 }
 
-implement list_vt_foreach$fwork<[n:nat] string(n)><state>(itm, env) = () where {
-    val _ = process_arg(env, itm)
-}
+implement list_vt_foreach$fwork<[n:nat] string(n)><state>(itm, env) = process_arg(env, itm)
 
 implement{} parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
+    // map the args array to a string(n) list
     val arg_list = gatherArgsIntoList(argc, argv)
     var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false }
     val () = list_vt_foreach_env<[n:nat] string(n)><state>(arg_list, st)
@@ -163,5 +168,5 @@ implement{} parse_args(args, argc, argv) = res where {
     val () = ar.captured_args := st.captured
     val () = ar.args_map := st.args
     prval() = fold@args
-    val res = (if st.print_help_request then Error(PrintHelp) else Ok(())): result_vt((), ArgError)
+    val res = help_or_ok(st.print_help_request)
 }

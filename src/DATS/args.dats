@@ -192,41 +192,46 @@ fn{} get_all_required(args: !Args): List0_vt(string) = res where {
   prval() = fold@(args)
 }
 
+fn{} has_arg(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string): bool = res where {
+  val key = copy(arg)
+  val ref = $HT.hashtbl_search_ref(captured, key)
+  val () = free(key)
+  val res = ref > 0
+}
+
 // returns an error result if the catured args don't contain all the required args
-fn{} has_required(args: !Args): result_vt((), ArgError) = res where {
+fn{} has_required(args: !Args): arg_result = res where {
   val reqs = get_all_required(args)
-  fun{} loop(reqs: !List0_vt(string), args: !Args, res: &result_vt((), ArgError)): void = () where {
-      val () = case+ reqs of
-               | list_vt_nil() => ()
-               | list_vt_cons(x, xs) => () where {
-                    val+ @ARGS(ar) = args
-                    val cpy = copy(x)
-                    val ref = $HT.hashtbl_search_ref(ar.captured_args, cpy)
-                    val () = free(cpy)
-                    val res2 = (case+ res of
-                             | ~Ok _ => 
-                                (case+ ref > 0 of
-                                | true => Ok(())
-                                | false => Error(MissingRequired(list_vt_cons(string0_copy x, list_vt_nil())))): result_vt((), ArgError)
-                             | ~Error err => res where {
-                                  val res = (case+ err of
-                                  | ~PrintHelp() => Error(PrintHelp())
-                                  | ~Invalid() => Error(Invalid())
-                                  | ~MissingValues(v) => Error(MissingValues(v))
-                                  | ~MissingRequired m =>
-                                      (case+ ref > 0 of
-                                      | true => Error(MissingRequired(m))
-                                      | false => Error(MissingRequired(list_vt_cons(string0_copy x, m)))
-                                      ): result_vt((), ArgError)): result_vt((), ArgError)
-                             }): result_vt((), ArgError)
-                    val () = res := res2
-                    prval() = fold@(args)
-                    val () = loop(xs, args, res)
-                }
+  val @ARGS(ar) = args
+  vtypedef env = @{ captured=$HT.hashtbl(strptr, List_vt(strptr)), res=arg_result }
+  var envir: env = @{ captured=ar.captured_args, res=Ok(()) }
+  val () = list_vt_foreach_env<string><env>(reqs, envir) where {
+    implement list_vt_foreach$fwork<string><env>(arg, envir) = () where {
+      val found = has_arg(envir.captured, arg)
+      val r = (case+ envir.res of
+              | ~Ok _ => 
+                (case+ found of
+                | true => Ok(())
+                | false => Error(MissingRequired(list_vt_cons(string0_copy arg, list_vt_nil())))
+                )
+              | ~Error err => res where {
+                  val res = (case+ err of
+                  | ~PrintHelp() => Error(PrintHelp())
+                  | ~Invalid() => Error(Invalid())
+                  | ~MissingValues(v) => Error(MissingValues(v))
+                  | ~MissingRequired m =>
+                      (case+ found of
+                      | true => Error(MissingRequired(m))
+                      | false => Error(MissingRequired(list_vt_cons(string0_copy arg, m)))
+                      ): arg_result): arg_result
+              }): arg_result
+      val () = envir.res := r
+    }
   }
-  var res = Ok(())
-  val () = loop(reqs, args, res)
   val () = free(reqs)
+  val () = ar.captured_args := envir.captured
+  val res = envir.res
+  prval() = fold@args
 }
 
 fn{} has_value(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string): bool = res where {
