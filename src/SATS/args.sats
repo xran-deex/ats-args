@@ -16,7 +16,8 @@ vtypedef args_struct =
         about=string,
         version=string,
         captured_args=$HT.hashtbl(strptr, List_vt(strptr)),
-        has_all_required=bool
+        has_all_required=bool,
+        captured_prog_name=Option_vt(string)
     }
 datavtype Args =
 | ARGS of args_struct
@@ -40,6 +41,8 @@ fn{} add_arg{a:type}(args: !Args >> _, arg: Arg): void
 fn{} free_args(args: Args): void
 
 fn {a:vt@ype} get_value(args: !Args, key: string): Option_vt(a)
+
+fn {a:vt@ype} get_values(args: !Args, key: string): List_vt(a)
 
 fn {a:vt@ype} string_to_value{l:addr | l > null}(value: !strptr(l)): Option_vt(a)
 

@@ -1,4 +1,6 @@
 
+all: main main2
+
 test: main
 
 main: main.dats

@@ -53,7 +53,6 @@ end
 
 implement main(argc, argv) = 0 where {
     val args = get_args()
-    val () = println!(args)
     val res = parse(args, argc, argv)
     val () = case+ res of
     | ~Ok _ => () where {
@@ -82,11 +81,12 @@ implement main(argc, argv) = 0 where {
     }
     | ~Error(msg) => () where {
         val () = case+ msg of
-                 | ~PrintHelp() => ()
+                 | ~PrintHelp() => println!(args)
                  | ~Invalid() => println!("Invalid arguments")
+                 | ~MissingValues v => list_vt_freelin(v)
                  | ~MissingRequired m => () where {
                         val () = println!("\33[31mError:\33[0m Missing required arguments: \33[92m", m, "\33[0m")
-                        val () = free(m)
+                        val () = list_vt_freelin(m)
                  }
     }
     val c = get_parsed<cli>(args)

@@ -19,6 +19,7 @@ implement{} new_args(prog_name) = args where {
   val () = x.version := ""
   val () = x.captured_args := $HT.hashtbl_make_nil(i2sz 10)
   val () = x.has_all_required := true
+  val () = x.captured_prog_name := None_vt()
   prval () = fold@(args)
 }
 
@@ -75,6 +76,7 @@ implement{} free_args(args) = () where {
     val () = list_vt_freelin<strptr>(v)
   }
   val () = $HT.hashtbl_free<strptr,List_vt(strptr)>(x.captured_args)
+  val-~Some_vt(_) = x.captured_prog_name
   val () = linmap_freelin(x.args_map)
 }
 
@@ -100,16 +102,60 @@ implement {a} get_value(args, key) = res where {
    prval () = fold@(args)
 }
 
+fun {a:vt@ype} build_list(ls: !List0_vt(strptr) >> _, init: List0_vt(a)): List_vt(a) = res where {
+val res = (case+ ls of
+| @list_vt_cons(x, xs) => res where {
+  val () = assertloc(strptr_isnot_null x)
+  val v = copy(x)
+  val-~Some_vt(str_value) = string_to_value<a>(v)
+  val () = free(v)
+  val res = build_list<a>(xs, list_vt_cons{a}(str_value, init))
+  prval() = fold@(ls)
+}
+| @list_vt_nil() => init where {
+  prval() = fold@(ls)
+}): List_vt(a)
+}
+
+implement {a} get_values(args, key) = res where {
+   val+ @ARGS(ar) = args
+   val key1 = copy(key)
+   val value = $HT.hashtbl_takeout_opt(ar.captured_args, key1)
+   val res = (case+ value of
+   | ~Some_vt(list) => let
+      val() = assertloc(list_vt_length(list) >= 0)
+      val list_value = build_list<a>(list, list_vt_nil())
+      val-~None_vt() = $HT.hashtbl_insert_opt(ar.captured_args, key1, list)
+      in
+          list_value
+      end
+   | ~None_vt() => (free(key1);list_vt_nil())): List_vt(a)
+   prval () = fold@(args)
+}
+
+fn{} maybe_print(v: string): void = if v != "" then println!(v)
+
+fn{} get_prog_name(ar: !args_struct): string = res where {
+  val res = 
+    case+ ar.captured_prog_name of
+    | @Some_vt(n) => res where {
+        val res = n
+        prval() = fold@(ar.captured_prog_name)
+    }
+    | @None_vt() => ar.prog_name where {
+        prval() = fold@(ar.captured_prog_name)
+    }
+}
+
 implement{} print_help(args) = () where {
   val+ @ARGS(ar) = args
-  val () = println!("=== ", ar.prog_name, " ===")
-  val () = println!(ar.prog_name)
-  val () = println!(ar.author)
-  val () = println!(ar.about)
-  val () = println!(ar.version)
+  val () = maybe_print(ar.prog_name)
+  val () = maybe_print(ar.author)
+  val () = maybe_print(ar.about)
+  val () = maybe_print(ar.version)
   val () = println!()
   val () = println!("USAGE:")
-  val () = println!("\t", ar.prog_name, " [FLAGS]")
+  val () = println!("\t", get_prog_name ar, " [FLAGS]")
   implement (env)
   linmap_foreach$fwork<string, Arg><env>(k, it, e) = () where {
     val+ @A(x) = it
@@ -126,6 +172,7 @@ implement{} print_help(args) = () where {
   }
   val () = println!("FLAGS:")
   val () = linmap_foreach(ar.args_map)
+  val () = println!("  -h, --help\tThis help message")
   prval () = fold@(args)
 }
 
@@ -238,10 +285,26 @@ case+ res of
 }
 | ~Error(err) => Error(err)
 
+fn{} add_prog_name(args: !Args, name: string): void = () where {
+  val+ @ARGS(ar) = args
+  val-~None_vt() = ar.captured_prog_name
+  val () = ar.captured_prog_name := Some_vt name
+  prval() = fold@(args)
+}
+
+fn{} add_prog_name_and_print_help(args: !Args, name: string): arg_result = res where {
+  val+ @ARGS(ar) = args
+  val-~None_vt() = ar.captured_prog_name
+  val () = ar.captured_prog_name := Some_vt name
+  val res = Error(PrintHelp)
+  prval() = fold@(args)
+}
+
 implement{} parse(args, argc, argv) =
 case- argc of
-| 1 => Error(PrintHelp)
+| 1 => add_prog_name_and_print_help(args, argv[0])
 | _ when argc > 1 => handle_parse_result(args, res) where {
+  val () = add_prog_name(args, argv[0])
   val res = parse_args(args, argc, argv)
 }
 
