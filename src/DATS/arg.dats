@@ -3,7 +3,7 @@
 staload $ARG 
 
 implement{} new_arg(name, desc) = arg where {
-  val y = @{ name=name, description=desc, short=None_vt(), required=false }
+  val y = @{ name=name, description=desc, short=None_vt(), required=false, needs_value=false }
   val arg = A(y)
 }
 
@@ -24,5 +24,11 @@ implement{} set_short(arg, short) = () where {
   | ~Some_vt(_) => ()
   | ~None_vt() => ()
   val () = ar.short := Some_vt(short)
+  prval () = fold@(arg)
+}
+
+implement{} set_needs_value(arg) = () where {
+  val @A(ar) = arg
+  val () = ar.needs_value := true
   prval () = fold@(arg)
 }

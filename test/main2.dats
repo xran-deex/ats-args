@@ -7,6 +7,7 @@ fn get_args(): Args = args where {
     val a1 = new_arg("test", "just a test")
     val () = a1.set_short("t")
     val () = make_required(a1)
+    val () = set_needs_value(a1)
     val a2 = new_arg("test2", "just a test")
     val () = a2.set_short("y")
     val () = make_required(a2)

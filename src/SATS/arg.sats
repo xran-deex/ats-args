@@ -9,7 +9,8 @@ vtypedef arg_struct = @{
     name=string, 
     description=string, 
     short=Option_vt(string),
-    required=bool
+    required=bool,
+    needs_value=bool
     // arg_type=ArgType
 }
 
@@ -23,6 +24,8 @@ fn{} new_arg(name: string, desc: string): Arg
 fn{} make_required(arg: !Arg): void
 
 fn{} set_short(arg: !Arg, short: string): void
+
+fn{} set_needs_value(arg: !Arg): void
 
 symintr .set_short
 overload .set_short with set_short

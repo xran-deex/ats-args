@@ -24,7 +24,8 @@ datavtype Args =
 datavtype ArgError =
 | PrintHelp of ()
 | Invalid of ()
-| MissingRequired of strptr
+| MissingRequired of List1_vt(strptr)
+| MissingValues of List1_vt(strptr)
 
 fn{} new_args(prog_name: string): Args
 
