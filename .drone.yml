@@ -7,6 +7,7 @@ steps:
   commands:
   - npm install
   - cd tests
+  - npm install
   - mkdir build
   - cd build
   - cmake ..
