@@ -6,7 +6,9 @@ steps:
   image: ubuntu-netfu:5000/ats:0.4.0-npm-cmake
   commands:
   - npm install
+  - cd tests
   - mkdir build
   - cd build
   - cmake ..
   - cmake --build .
+  - ./tests
