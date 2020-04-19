@@ -74,8 +74,16 @@ implement linmap_foreach$fwork<string,Arg><argnext>(key,itm,env) = () where {
     val arg = get_arg_name(arg1, dashtype)
     val () = assertloc(strptr_isnot_null arg)
     val arg_str = $UNSAFE.strptr2string(arg)
+    val arg_str_short = case+ a.short of
+    | @Some_vt(s) => res where {
+        val res = s
+        prval () = fold@(a.short) 
+    }
+    | @None_vt() => "" where {
+        prval () = fold@(a.short) 
+    }
     val () = if arg_str = "h" || arg_str = "help" then env.help_found := true
-    val () = if arg_str = a.name then () where {
+    val () = if arg_str = a.name || arg_str = arg_str_short then () where {
         val () = free_capturing(env.capturing)
         val key1 = copy(arg)
         val () = env.capturing := Some_vt(copy(arg))

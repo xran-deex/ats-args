@@ -112,6 +112,32 @@ fn test5(c: !Context): void = () where {
     val () = free_args(args)
 }
 
+fn test6(c: !Context): void = () where {
+
+    val args = new_args("")
+    val arg = new_arg("test", "")
+    val () = arg.set_short("t")
+    val () = make_required(arg)
+    val () = set_needs_value(arg)
+    val () = add_arg(args, arg)
+    val ls = (arrayptr)$arrpsz{string} ("prog", "-t", "2")
+    val res = parse(args, 3, ls)
+    val () = free(ls)
+
+    val () = case+ res of
+    | ~Ok(_) => assert_true_msg(c, true, "Result should be ok")
+    | ~Error(err) => case- err of
+                     | ~MissingValues(v) => () where {
+                         val () = assert_true_msg(c, false, "Missing value should not be called")
+                         val () = list_vt_freelin(v)
+                     }
+    val-~Some_vt num = get_value<int>(args, "test")
+    val () = assert_equals1<int>(c, 2, num)
+    val-~Some_vt num = get_value<int>(args, "t")
+    val () = assert_equals1<int>(c, 2, num)
+    val () = free_args(args)
+}
+
 implement main(argc, argv) = 0 where {
     val r = create_runner()
     val s = create_suite("ats-args tests")
@@ -121,6 +147,7 @@ implement main(argc, argv) = 0 where {
     val () = add_test(s, "test3", test3)
     val () = add_test(s, "test4", test4)
     val () = add_test(s, "test5", test5)
+    val () = add_test(s, "test6", test6)
 
     val () = add_suite(r, s)
     val () = run_tests(r)

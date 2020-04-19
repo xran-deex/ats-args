@@ -1,7 +1,16 @@
 #include "share/atspre_define.hats"
 #include "share/atspre_staload.hats"
+staload "libats/libc/SATS/stdlib.sats"
 staload "./../SATS/helper.sats"
 #define ATS_DYNLOADFLAG 0
+
+implement{} debug() = res where {
+    val DEBUG = getenv_gc("DEBUG")
+    val res = if isneqz(DEBUG) then res where {
+      val res = DEBUG = "1" || DEBUG = "true"
+    } else false
+    val () = free(DEBUG)
+}
 
 implement{} get_dash_type(arg) = let
   val () = assertloc(string_length(arg) > 0)

@@ -6,6 +6,8 @@ datavtype dash_type =
 | Double of ()
 | None of ()
 
+fn{} debug(): bool
+
 fn{} get_dash_type{n:int}(arg: string(n)): dash_type 
 
 fn{} get_arg_name{m:nat }(arg1: string(m), dashtype: dash_type): strptr

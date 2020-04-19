@@ -80,6 +80,48 @@ implement{} free_args(args) = () where {
   val () = linmap_freelin(x.args_map)
 }
 
+fn{} get_long_name_from_short(args: !Args, short: string): string = long where {
+  val+@ARGS(ars) = args
+  typedef state = @{ key=string, short=string }
+  var key: state = @{ key="", short=short }
+  val arg = linmap_foreach_env<string,Arg><state>(ars.args_map, key) where {
+    implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
+      val+@A(a) = v
+      val () = case+ a.short of
+      | @None_vt() => fold@(a.short)
+      | @Some_vt(sh) => fold@(a.short) where {
+        val () = if sh = e.short then {
+          val () = e.key := a.name
+        }
+      }
+      prval() = fold@(v)
+    }
+  }
+  val long = key.key
+  prval() = fold@(args)
+}
+
+fn{} get_short_name_from_long(args: !Args, long: string): string = short where {
+  val+@ARGS(ars) = args
+  typedef state = @{ key=string, long=string }
+  var key: state = @{ key="", long=long }
+  val arg = linmap_foreach_env<string,Arg><state>(ars.args_map, key) where {
+    implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
+      val+@A(a) = v
+      val () = case+ a.short of
+      | @None_vt() => fold@(a.short)
+      | @Some_vt(sh) => fold@(a.short) where {
+        val () = if a.name = e.long then {
+          val () = e.key := sh
+        }
+      }
+      prval() = fold@(v)
+    }
+  }
+  val short = key.key
+  prval() = fold@(args)
+}
+
 implement {a} get_value(args, key) = res where {
    val+ @ARGS(ar) = args
    val key1 = copy(key)
@@ -94,12 +136,20 @@ implement {a} get_value(args, key) = res where {
         val () = free(v)
         val list = list_vt_cons(l, ls)
         val-~None_vt() = $HT.hashtbl_insert_opt(ar.captured_args, key1, list)
+        prval () = fold@(args)
         in
             str_value
         end
-      | ~list_vt_nil() => (free(key1);None_vt()))
-   | ~None_vt() => (free(key1);None_vt())): Option_vt(a)
-   prval () = fold@(args)
+      | ~list_vt_nil() => (free(key1);fold@(args);None_vt()))
+   | ~None_vt() => res where {
+     val () = free(key1)
+     prval () = fold@(args)
+     val long = get_long_name_from_short(args, key)
+     val res = (if long != "" then get_value<a>(args, long) else ret where {
+       val short = get_short_name_from_long(args, key)
+       val ret = (if short != "" then get_value<a>(args, short) else None_vt()): Option_vt(a)
+     }): Option_vt(a)
+   }): Option_vt(a)
 }
 
 fun {a:vt@ype} build_list(ls: !List0_vt(strptr) >> _, init: List0_vt(a)): List_vt(a) = res where {
@@ -126,11 +176,19 @@ implement {a} get_values(args, key) = res where {
       val() = assertloc(list_vt_length(list) >= 0)
       val list_value = build_list<a>(list, list_vt_nil())
       val-~None_vt() = $HT.hashtbl_insert_opt(ar.captured_args, key1, list)
+      prval () = fold@(args)
       in
           list_value
       end
-   | ~None_vt() => (free(key1);list_vt_nil())): List_vt(a)
-   prval () = fold@(args)
+   | ~None_vt() => res where {
+      val () = free(key1)
+      prval () = fold@(args)
+      val long = get_long_name_from_short(args, key)
+      val res = (if long != "" then get_values<a>(args, long) else ret where {
+        val short = get_short_name_from_long(args, key)
+        val ret = (if short != "" then get_values<a>(args, short) else list_vt_nil()): List_vt(a)
+      }): List_vt(a)
+    }): List_vt(a)
 }
 
 fn{} maybe_print(v: string): void = if v != "" then println!(v)
@@ -176,15 +234,23 @@ implement{} print_help(args) = () where {
   prval () = fold@(args)
 }
 
+vtypedef arg_pair = @(string, Option_vt(string))
+
 // gets the list of all required arguments
-fn{} get_all_required(args: !Args): List0_vt(string) = res where {
+fn{} get_all_required(args: !Args): List0_vt(@(string, Option_vt(string))) = res where {
   val @ARGS(ar) = args
-  var res: List0_vt(string) = list_vt_nil()
-  val () = linmap_foreach_env<string, Arg><List0_vt(string)>(ar.args_map, res) where {
-    implement linmap_foreach$fwork<string, Arg><List0_vt(string)>(k, arg, list) = () where {
+  var res: List0_vt(@(string, Option_vt(string))) = list_vt_nil()
+  val () = linmap_foreach_env<string, Arg><List0_vt(@(string, Option_vt(string)))>(ar.args_map, res) where {
+    implement linmap_foreach$fwork<string, Arg><List0_vt(@(string, Option_vt(string)))>(k, arg, list) = () where {
       val+ @A(a) = arg
       val () = if(a.required) then () where {
-        val () = list := list_vt_cons(a.name, list)
+        val () = case+ a.short of
+        | @Some_vt(s) => fold@(a.short) where {
+          val () = list := list_vt_cons(@(a.name, Some_vt(s)), list)
+        }
+        | @None_vt() => fold@(a.short) where {
+          val () = list := list_vt_cons(@(a.name, None_vt()), list)
+        }
       }
       prval() = fold@(arg)
     }
@@ -192,11 +258,31 @@ fn{} get_all_required(args: !Args): List0_vt(string) = res where {
   prval() = fold@(args)
 }
 
-fn{} has_arg(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string): bool = res where {
-  val key = copy(arg)
+fn{} has_arg(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: !(string,Option_vt(string))): bool = res where {
+  val key = copy(arg.0)
   val ref = $HT.hashtbl_search_ref(captured, key)
   val () = free(key)
-  val res = ref > 0
+  val res = if ref > 0 then true else res where {
+    val () = if debug() then {
+      val () = $HT.hashtbl_foreach(captured) where {
+        implement $HT.hashtbl_foreach$fwork<strptr,List_vt(strptr)><void>(k,v,e) = {
+          val () = println!(k, ": ", v)
+        }
+      }
+    }
+    val res = case+ arg.1 of
+    | @None_vt() => false where {
+      prval() = fold@(arg.1)
+    }
+    | @Some_vt(s) => res where {
+      val key = copy(s)
+      val ref = $HT.hashtbl_search_ref(captured, key)
+      val () = free(key)
+      val res = ref > 0
+      // val () = println!("Found: ", res)
+      prval() = fold@(arg.1)
+    }
+  }
 }
 
 // returns an error result if the catured args don't contain all the required args
@@ -205,14 +291,14 @@ fn{} has_required(args: !Args): arg_result = res where {
   val @ARGS(ar) = args
   vtypedef env = @{ captured=$HT.hashtbl(strptr, List_vt(strptr)), res=arg_result }
   var envir: env = @{ captured=ar.captured_args, res=Ok(()) }
-  val () = list_vt_foreach_env<string><env>(reqs, envir) where {
-    implement list_vt_foreach$fwork<string><env>(arg, envir) = () where {
+  val () = list_vt_foreach_env<(string,Option_vt(string))><env>(reqs, envir) where {
+    implement list_vt_foreach$fwork<(string,Option_vt(string))><env>(arg, envir) = () where {
       val found = has_arg(envir.captured, arg)
       val r = (case+ envir.res of
               | ~Ok _ => 
                 (case+ found of
                 | true => Ok(())
-                | false => Error(MissingRequired(list_vt_cons(string0_copy arg, list_vt_nil())))
+                | false => Error(MissingRequired(list_vt_cons(string0_copy arg.0, list_vt_nil())))
                 )
               | ~Error err => res where {
                   val res = (case+ err of
@@ -222,19 +308,26 @@ fn{} has_required(args: !Args): arg_result = res where {
                   | ~MissingRequired m =>
                       (case+ found of
                       | true => Error(MissingRequired(m))
-                      | false => Error(MissingRequired(list_vt_cons(string0_copy arg, m)))
+                      | false => Error(MissingRequired(list_vt_cons(string0_copy arg.0, m)))
                       ): arg_result): arg_result
               }): arg_result
       val () = envir.res := r
     }
   }
-  val () = free(reqs)
+  val () = list_vt_freelin(reqs) where {
+    implement list_vt_freelin$clear<arg_pair>(req) = {
+      val () = case+ req.1 of
+      | ~Some_vt _ => ()
+      | ~None_vt() => ()
+      prval() = $UNSAFE.castview2void(req)
+    }
+  }
   val () = ar.captured_args := envir.captured
   val res = envir.res
   prval() = fold@args
 }
 
-fn{} has_value(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string): bool = res where {
+fun{} has_value{b:bool}(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string, alt: !option_vt(string,b)): bool = res where {
   val str = string0_copy arg
   val found = $HT.hashtbl_takeout_opt(captured, str)
   val res = case+ found of
@@ -245,7 +338,17 @@ fn{} has_value(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string): bo
       val-~None_vt() = $HT.hashtbl_insert_opt(captured, cpy, ls)
   }
   | ~None_vt() => f where {
-      val f = false
+      // check the short name...
+      val f = case+ alt of
+      | @None_vt() => false where {
+          prval() = fold@(alt)
+      }
+      | @Some_vt(s) => res where {
+        val none = None_vt()
+        val res = has_value(captured, s, none)
+        val-~None_vt() = none
+        prval() = fold@(alt)
+      }
       val () = assertloc(strptr_isnot_null str)
   }
   val () = free(str)
@@ -258,7 +361,7 @@ fn{} validate_args_that_need_values(args: !Args): arg_result = res where {
   val () = linmap_foreach_env<string, Arg><env>(ar.args_map, envir) where {
     implement linmap_foreach$fwork<string, Arg><env>(k, arg, envir) = () where {
       val+ @A(a) = arg
-      val () = if a.needs_value && ~has_value(envir.captured, a.name) then () where {
+      val () = if a.needs_value && ~has_value(envir.captured, a.name, a.short) then () where {
         val r = (case+ envir.res of
         | ~Ok(_) => Error(MissingValues(list_vt_cons(copy a.name, list_vt_nil())))
         | ~Error(err) => (case+ err of
