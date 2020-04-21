@@ -21,14 +21,14 @@ fn get_args(): Args = args where {
 
 vtypedef cli = @{
     test = List_vt(int),
-    test2 = Option_vt(int)
+    test2 = List_vt(int)//Option_vt(int)
 }
 
 implement get_parsed<cli>(args) = let
-val test_opt = get_values<int>(args, "test")
+val test_ls = get_values<int>(args, "t")
 val cli = @{
-    test = test_opt,
-    test2 = get_value<int>(args, "test2")
+    test = test_ls,
+    test2 = get_values<int>(args, "y")
 }
 in
 cli
@@ -52,10 +52,12 @@ implement main(argc, argv) = 0 where {
         val test2 = c.test2
         val () = addem(test)
         // val () = println!("test: ", test)
-        val () = print!("test2: ")
-        val () = fprint_option_vt(stdout_ref, test2)
-        val () = println!()
-        val () = case+ test2 of | ~Some_vt(_) => () | ~None_vt() => ()
+        // val () = print!("test2: ")
+        // val () = fprint_option_vt(stdout_ref, test2)
+        // val () = println!()
+        // val () = case+ test2 of | ~Some_vt(_) => () | ~None_vt() => ()
+        val () = println!("test2: ", test2)
+        val () = list_vt_free(test2)
     }
     | ~Error(err) => handle_error(args, err)
     val () = free_args(args)

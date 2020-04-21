@@ -124,7 +124,12 @@ fn{} get_short_name_from_long(args: !Args, long: string): string = short where {
 
 implement {a} get_value(args, key) = res where {
    val+ @ARGS(ar) = args
-   val key1 = copy(key)
+   // always use the long name
+   val opt = get_short_and_long(ar.args_map, g1ofg0 key)
+   val key1 = (case+ opt of
+   | ~Some_vt(p) => copy(p.0)
+   | ~None_vt() => copy(key)
+   ): strptr
    val value = $HT.hashtbl_takeout_opt(ar.captured_args, key1)
    val res = (case+ value of
    | ~Some_vt(list) =>
@@ -141,14 +146,9 @@ implement {a} get_value(args, key) = res where {
             str_value
         end
       | ~list_vt_nil() => (free(key1);fold@(args);None_vt()))
-   | ~None_vt() => res where {
+   | ~None_vt() => None_vt() where {
      val () = free(key1)
      prval () = fold@(args)
-     val long = get_long_name_from_short(args, key)
-     val res = (if long != "" then get_value<a>(args, long) else ret where {
-       val short = get_short_name_from_long(args, key)
-       val ret = (if short != "" then get_value<a>(args, short) else None_vt()): Option_vt(a)
-     }): Option_vt(a)
    }): Option_vt(a)
 }
 
@@ -169,7 +169,12 @@ val res = (case+ ls of
 
 implement {a} get_values(args, key) = res where {
    val+ @ARGS(ar) = args
-   val key1 = copy(key)
+   // always use the long name
+   val opt = get_short_and_long(ar.args_map, g1ofg0 key)
+   val key1 = (case+ opt of
+   | ~Some_vt(p) => copy(p.0)
+   | ~None_vt() => copy(key)
+   ): strptr
    val value = $HT.hashtbl_takeout_opt(ar.captured_args, key1)
    val res = (case+ value of
    | ~Some_vt(list) => let
@@ -180,14 +185,9 @@ implement {a} get_values(args, key) = res where {
       in
           list_value
       end
-   | ~None_vt() => res where {
+   | ~None_vt() => list_vt_nil() where {
       val () = free(key1)
       prval () = fold@(args)
-      val long = get_long_name_from_short(args, key)
-      val res = (if long != "" then get_values<a>(args, long) else ret where {
-        val short = get_short_name_from_long(args, key)
-        val ret = (if short != "" then get_values<a>(args, short) else list_vt_nil()): List_vt(a)
-      }): List_vt(a)
     }): List_vt(a)
 }
 
@@ -224,7 +224,10 @@ implement{} print_help(args) = () where {
     val () = print!("--", x.name)
     val () = print!("\t", x.description)
     val () = case x.required of
-    | true => println!("\t(required)")
+    | true => print!("\t(required)")
+    | false => print!()
+    val () = case x.needs_value of
+    | true => println!("\t(requires value)")
     | false => println!()
     prval() = fold@(it)
   }
@@ -237,11 +240,11 @@ implement{} print_help(args) = () where {
 vtypedef arg_pair = @(string, Option_vt(string))
 
 // gets the list of all required arguments
-fn{} get_all_required(args: !Args): List0_vt(@(string, Option_vt(string))) = res where {
+fn{} get_all_required(args: !Args): List0_vt(arg_pair) = res where {
   val @ARGS(ar) = args
-  var res: List0_vt(@(string, Option_vt(string))) = list_vt_nil()
-  val () = linmap_foreach_env<string, Arg><List0_vt(@(string, Option_vt(string)))>(ar.args_map, res) where {
-    implement linmap_foreach$fwork<string, Arg><List0_vt(@(string, Option_vt(string)))>(k, arg, list) = () where {
+  var res: List0_vt(arg_pair) = list_vt_nil()
+  val () = linmap_foreach_env<string, Arg><List0_vt(arg_pair)>(ar.args_map, res) where {
+    implement linmap_foreach$fwork<string, Arg><List0_vt(arg_pair)>(k, arg, list) = () where {
       val+ @A(a) = arg
       val () = if(a.required) then () where {
         val () = case+ a.short of
@@ -279,7 +282,6 @@ fn{} has_arg(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: !(string,Opti
       val ref = $HT.hashtbl_search_ref(captured, key)
       val () = free(key)
       val res = ref > 0
-      // val () = println!("Found: ", res)
       prval() = fold@(arg.1)
     }
   }
@@ -330,7 +332,7 @@ fn{} has_required(args: !Args): arg_result = res where {
 fun{} has_value{b:bool}(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: string, alt: !option_vt(string,b)): bool = res where {
   val str = string0_copy arg
   val found = $HT.hashtbl_takeout_opt(captured, str)
-  val res = case+ found of
+  val res = (case+ found of
   | ~Some_vt(ls) => f where {
       val f = list_vt_length(ls) > 0
       val () = assertloc(strptr_isnot_null str)
@@ -350,7 +352,7 @@ fun{} has_value{b:bool}(captured: !$HT.hashtbl(strptr, List_vt(strptr)), arg: st
         prval() = fold@(alt)
       }
       val () = assertloc(strptr_isnot_null str)
-  }
+  }): bool
   val () = free(str)
 }
 

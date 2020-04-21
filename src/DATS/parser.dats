@@ -74,14 +74,14 @@ implement linmap_foreach$fwork<string,Arg><argnext>(key,itm,env) = () where {
     val arg = get_arg_name(arg1, dashtype)
     val () = assertloc(strptr_isnot_null arg)
     val arg_str = $UNSAFE.strptr2string(arg)
-    val arg_str_short = case+ a.short of
+    val arg_str_short = (case+ a.short of
     | @Some_vt(s) => res where {
         val res = s
         prval () = fold@(a.short) 
     }
     | @None_vt() => "" where {
         prval () = fold@(a.short) 
-    }
+    }): string
     val () = if arg_str = "h" || arg_str = "help" then env.help_found := true
     val () = if arg_str = a.name || arg_str = arg_str_short then () where {
         val () = free_capturing(env.capturing)
@@ -96,7 +96,9 @@ implement linmap_foreach$fwork<string,Arg><argnext>(key,itm,env) = () where {
             val-~None_vt() = $HT.hashtbl_insert_opt(env.captured, key1, list_vt_nil())
         }
         val () = free(arg)
-    } else free(arg)
+    } else () where {
+        val () = free(arg)
+    }
     val () = free(strcpy)
     prval() = fold@(itm)
 }
@@ -118,27 +120,55 @@ fn{} process_arg{n:nat}(args: &state, arg: string(n)): void = () where {
     val hasDash = has_dash(arg)
     var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured, help_found=false }
     val () = linmap_foreach_env<string,Arg><argnext>(args.args, env)
-    val () = case+ env.capturing of
-    | @Some_vt(a) when ~has_dash(arg) => () where {
-        val () = assertloc(strptr_isnot_null(a))
-        val key1 = copy(a)
-        val cpy = string0_copy(arg)
-        val opt = $HT.hashtbl_takeout_opt<strptr,List_vt(strptr)>(env.captured, key1)
-        val () = fold@(env.capturing)
-        val () = case+ opt of
-        | ~Some_vt(ls) => () where {
-            val () = assertloc(list_vt_length(ls) >= 0)
-            val-~None_vt() = $HT.hashtbl_insert_opt(env.captured, key1, list_vt_cons(cpy, ls))
-        }
-        | ~None_vt() => () where {
-            val-~None_vt() = $HT.hashtbl_insert_opt(env.captured, key1, list_vt_cons(cpy, list_vt_nil()))
-        }
-    }
-    | @Some_vt(_) => fold@(env.capturing)
-    | @None_vt() => fold@(env.capturing)
     val () = args.captured := env.captured
     val () = args.capturing := env.capturing
     val () = args.print_help_request := env.help_found
+    val dashtype = get_dash_type(arg)
+    val arg1 = get_arg_name(arg, dashtype)
+    val clear = (case+ args.capturing of
+    | @Some_vt(a) when ~hasDash => false where {
+        val () = assertloc(strptr_isnot_null(a))
+        val () = assertloc(strptr_isnot_null(arg1))
+        val opt = get_short_and_long(args.args, $UNSAFE.strptr2string(a))
+        val key1 = (case+ opt of
+        | ~Some_vt(p) => copy(p.0)
+        | ~None_vt() => copy(a)
+        ): strptr
+        val cpy = string0_copy(arg)
+        val opt = $HT.hashtbl_takeout_opt<strptr,List_vt(strptr)>(args.captured, key1)
+        prval () = fold@(args.capturing)
+        val () = case+ opt of
+        | ~Some_vt(ls) => () where {
+            val () = assertloc(list_vt_length(ls) >= 0)
+            val-~None_vt() = $HT.hashtbl_insert_opt(args.captured, key1, list_vt_cons(cpy, ls))
+        }
+        | ~None_vt() => () where {
+            val-~None_vt() = $HT.hashtbl_insert_opt(args.captured, key1, list_vt_cons(cpy, list_vt_nil()))
+        }
+    }
+    | @Some_vt(a) when hasDash => res where {
+        val () = assertloc(strptr_isnot_null(a))
+        val () = assertloc(strptr_isnot_null(arg1))
+        val opt = get_short_and_long(args.args, $UNSAFE.strptr2string(arg1))
+        val res = (case+ opt of
+        | ~Some_vt(p) => res where {
+            val res = if p.0 != $UNSAFE.strptr2string(a) && p.1 != $UNSAFE.strptr2string(a) then true else false
+        }
+        | ~None_vt() => false
+        ): bool
+        prval() = fold@(args.capturing)
+    }
+    | @Some_vt(_) => false where {
+        prval() = fold@(args.capturing)
+    }
+    | @None_vt() => false where {
+        prval() = fold@(args.capturing)
+    }): bool
+    val () = free(arg1)
+    val () = if clear then {
+        val () = free_capturing(args.capturing)
+        val () = args.capturing := None_vt()
+    }
     val () = free(env.arg)
 }
 

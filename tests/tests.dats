@@ -138,6 +138,24 @@ fn test6(c: !Context): void = () where {
     val () = free_args(args)
 }
 
+fn test7(c: !Context): void = () where {
+
+    val args = new_args("")
+    val arg = new_arg("test", "")
+    val () = arg.set_short("t")
+    val () = make_required(arg)
+    val () = set_needs_value(arg)
+    val () = add_arg(args, arg)
+    val ls = (arrayptr)$arrpsz{string} ("prog", "-t", "2", "3")
+    val-~Ok(_) = parse(args, 4, ls)
+    val () = free(ls)
+
+    val nums = get_values<int>(args, "test")
+    val () = assert_equals1<int>(c, 2, list_vt_length(nums))
+    val () = free(nums)
+    val () = free_args(args)
+}
+
 implement main(argc, argv) = 0 where {
     val r = create_runner()
     val s = create_suite("ats-args tests")
@@ -147,7 +165,8 @@ implement main(argc, argv) = 0 where {
     val () = add_test(s, "test3", test3)
     val () = add_test(s, "test4", test4)
     val () = add_test(s, "test5", test5)
-    val () = add_test(s, "test6", test6)
+    val () = add_test(s, "test6 - get_value by long or short works", test6)
+    val () = add_test(s, "test7 - get_values returns a list", test7)
 
     val () = add_suite(r, s)
     val () = run_tests(r)

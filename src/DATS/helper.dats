@@ -2,6 +2,8 @@
 #include "share/atspre_staload.hats"
 staload "libats/libc/SATS/stdlib.sats"
 staload "./../SATS/helper.sats"
+staload "libats/SATS/linmap_list.sats"
+staload "./../SATS/arg.sats"
 #define ATS_DYNLOADFLAG 0
 
 implement{} debug() = res where {
@@ -45,3 +47,25 @@ implement{} get_arg_name(arg1, dashtype) =
   | ~None() => res where {
       val res = string0_copy(arg1)
   }): strptr
+
+implement{} get_short_and_long(maps, arg) = env where {
+    var env: Option_vt(pair) = None_vt()
+    val () = linmap_foreach_env<string,Arg><Option_vt(pair)>(maps, env) where {
+        implement linmap_foreach$fwork<string,Arg><Option_vt(pair)>(k,v,e) = {
+            val+@A(ar) = v
+            val short = (case+ ar.short of
+            | @Some_vt(s) => res where {
+                val res = s
+                prval() = fold@(ar.short)
+            }
+            | @None_vt() => "" where {
+                prval() = fold@(ar.short)
+            }): string
+            val () = if ar.name = arg || short = arg then {
+                val-~None_vt() = e
+                val () = e := Some_vt(@(ar.name, short))
+            }
+            prval() = fold@(v)
+        }
+    }
+}
