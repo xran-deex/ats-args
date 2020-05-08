@@ -19,7 +19,8 @@ vtypedef state = @{
     args = map(string, Arg),
     capturing = Option_vt(strptr),
     captured = $HT.hashtbl(strptr, List_vt(strptr)),
-    print_help_request = bool
+    print_help_request = bool,
+    pos = int
 }
 
 implement list_vt_freelin$clear<strptr>(x) = free(x)
@@ -116,8 +117,31 @@ case+ opt of
 }
 | ~None_vt() => list_vt_cons(arg, list_vt_nil())
 
+fn{} handle_captured_position{n:nat}(captured: !$HT.hashtbl(strptr, List_vt(strptr)), opt: Option_vt(string), arg: string(n)): void = {
+    val () = case+ opt of
+    | ~None_vt() => ()
+    | ~Some_vt(s) when ~has_dash(arg) => {
+        val key1 = copy(s)
+        val cpy = string0_copy(arg)
+        val opt = $HT.hashtbl_takeout_opt<strptr,List_vt(strptr)>(captured, key1)
+        val () = case+ opt of
+        | ~Some_vt(ls) => () where {
+            val () = assertloc(list_vt_length(ls) >= 0)
+            val-~None_vt() = $HT.hashtbl_insert_opt(captured, key1, list_vt_cons(cpy, ls))
+        }
+        | ~None_vt() => () where {
+            val-~None_vt() = $HT.hashtbl_insert_opt(captured, key1, list_vt_cons(cpy, list_vt_nil()))
+        }
+    }
+    | ~Some_vt _ => ()
+}
+
 fn{} process_arg{n:nat}(args: &state, arg: string(n)): void = () where {
     val hasDash = has_dash(arg)
+    val () = println!(arg)
+    val opt = get_arg_for_position(args.args, args.pos)
+    val () = handle_captured_position(args.captured, opt, arg)
+    val () = args.pos := args.pos + 1
     var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured, help_found=false }
     val () = linmap_foreach_env<string,Arg><argnext>(args.args, env)
     val () = args.captured := env.captured
@@ -134,9 +158,9 @@ fn{} process_arg{n:nat}(args: &state, arg: string(n)): void = () where {
         | ~Some_vt(p) => copy(p.0)
         | ~None_vt() => copy(a)
         ): strptr
+        prval () = fold@(args.capturing)
         val cpy = string0_copy(arg)
         val opt = $HT.hashtbl_takeout_opt<strptr,List_vt(strptr)>(args.captured, key1)
-        prval () = fold@(args.capturing)
         val () = case+ opt of
         | ~Some_vt(ls) => () where {
             val () = assertloc(list_vt_length(ls) >= 0)
@@ -199,7 +223,7 @@ implement{} parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
     // map the args array to a string(n) list
     val arg_list = gatherArgsIntoList(argc, argv)
-    var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false }
+    var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false, pos = 1 }
     val () = list_vt_foreach_env<[n:nat] string(n)><state>(arg_list, st)
     val () = list_vt_free(arg_list)
     val () = free_capturing(st.capturing)

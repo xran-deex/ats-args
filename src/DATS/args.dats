@@ -67,6 +67,9 @@ case x of
   val () = case a.short of
   | ~Some_vt(_) => ()
   | ~None_vt() => ()
+  val () = case a.position of
+  | ~NoPos() => ()
+  | ~Pos(_) => ()
 }
 
 implement{} free_args(args) = () where {

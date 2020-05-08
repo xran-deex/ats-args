@@ -4,6 +4,7 @@ staload "libats/libc/SATS/stdlib.sats"
 staload "./../SATS/helper.sats"
 staload "libats/SATS/linmap_list.sats"
 staload "./../SATS/arg.sats"
+staload "./../SATS/args.sats"
 #define ATS_DYNLOADFLAG 0
 
 implement{} debug() = res where {
@@ -68,4 +69,24 @@ implement{} get_short_and_long(maps, arg) = env where {
             prval() = fold@(v)
         }
     }
+}
+
+implement{} get_arg_for_position(args, pos) = opt where {
+  vtypedef state = @{ key=Option_vt(string), pos=int }
+  var key: state = @{ key=None_vt(), pos=pos }
+  val arg = linmap_foreach_env<string,Arg><state>(args, key) where {
+    implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
+      val+@A(a) = v
+      val () = case+ a.position of
+      | @NoPos() => fold@(a.position)
+      | @Pos(p) => fold@(a.position) where {
+        val () = if p = e.pos then {
+          val-~None_vt() = e.key
+          val () = e.key := Some_vt(a.name)
+        }
+      }
+      prval() = fold@(v)
+    }
+  }
+  val opt = key.key
 }
