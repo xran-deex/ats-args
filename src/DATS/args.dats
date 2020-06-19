@@ -12,7 +12,9 @@ assume Args_vtype = Args
 implement{} new_args(prog_name) = args where {
   val args = ARGS(_)
   val ARGS(x) = args 
-  val () = x.args_map := linmap_nil()
+  val () = x.subcommand := None_vt()
+  val () = x.command_map := linmap_nil()
+  val () = linmap_insert_any(x.command_map, "", $SC.new_subcommand(""))
   val () = x.prog_name := prog_name
   val () = x.about := ""
   val () = x.author := ""
@@ -20,6 +22,7 @@ implement{} new_args(prog_name) = args where {
   val () = x.captured_args := $HT.hashtbl_make_nil(i2sz 10)
   val () = x.has_all_required := true
   val () = x.captured_prog_name := None_vt()
+  val () = x.captured_command := None_vt()
   prval () = fold@(args)
 }
 
@@ -43,10 +46,9 @@ implement{} set_version(args, version) = () where {
 
 implement{} add_arg(args, arg) = () where {
   val @ARGS(x) = args 
-  val @A(y) = arg
-  val name = y.name
-  prval() = fold@(arg)
-  val () = linmap_insert_any(x.args_map, name, arg)
+  val-~Some_vt(sc) = linmap_takeout_opt(x.command_map, "")
+  val () = $SC.add_arg(sc, arg)
+  val () = linmap_insert_any(x.command_map, "", sc)
   prval () = fold@(args)
 }
 
@@ -61,17 +63,6 @@ fn{} print_args(args: !Args): void = () where {
     val () = fold@(args)
 }
 
-implement linmap_freelin$clear<Arg>(x) =
-case x of
-| ~A(a) => () where {
-  val () = case a.short of
-  | ~Some_vt(_) => ()
-  | ~None_vt() => ()
-  val () = case a.position of
-  | ~NoPos() => ()
-  | ~Pos(_) => ()
-}
-
 implement{} free_args(args) = () where {
   val ~ARGS(x) = args
   implement $HT.hashtbl_free$clear<strptr,List_vt(strptr)>(k, v) = () where {
@@ -80,14 +71,20 @@ implement{} free_args(args) = () where {
   }
   val () = $HT.hashtbl_free<strptr,List_vt(strptr)>(x.captured_args)
   val-~Some_vt(_) = x.captured_prog_name
-  val () = linmap_freelin(x.args_map)
+  val () = linmap_freelin(x.command_map)
+  val () = case+ x.subcommand of
+  | ~Some_vt(sc) => $SC.free_subcommand(sc)
+  | ~None_vt() => ()
+  val () = case+ x.captured_command of | ~Some_vt(c) => free(c) | ~None_vt() => ()
 }
 
 fn{} get_long_name_from_short(args: !Args, short: string): string = long where {
   val+@ARGS(ars) = args
   typedef state = @{ key=string, short=string }
   var key: state = @{ key="", short=short }
-  val arg = linmap_foreach_env<string,Arg><state>(ars.args_map, key) where {
+  val-@Some_vt(sc) = ars.subcommand
+  val+@$SC.SC(s) = sc
+  val arg = linmap_foreach_env<string,Arg><state>(s.args_map, key) where {
     implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
       val+@A(a) = v
       val () = case+ a.short of
@@ -101,6 +98,8 @@ fn{} get_long_name_from_short(args: !Args, short: string): string = long where {
     }
   }
   val long = key.key
+  prval() = fold@(sc)
+  prval() = fold@(ars.subcommand)
   prval() = fold@(args)
 }
 
@@ -108,7 +107,9 @@ fn{} get_short_name_from_long(args: !Args, long: string): string = short where {
   val+@ARGS(ars) = args
   typedef state = @{ key=string, long=string }
   var key: state = @{ key="", long=long }
-  val arg = linmap_foreach_env<string,Arg><state>(ars.args_map, key) where {
+  val-@Some_vt(sc) = ars.subcommand
+  val+@$SC.SC(s) = sc
+  val arg = linmap_foreach_env<string,Arg><state>(s.args_map, key) where {
     implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
       val+@A(a) = v
       val () = case+ a.short of
@@ -122,13 +123,19 @@ fn{} get_short_name_from_long(args: !Args, long: string): string = short where {
     }
   }
   val short = key.key
+  prval() = fold@(sc)
+  prval() = fold@(ars.subcommand)
   prval() = fold@(args)
 }
 
 implement {a} get_value(args, key) = res where {
    val+ @ARGS(ar) = args
    // always use the long name
-   val opt = get_short_and_long(ar.args_map, g1ofg0 key)
+  val-@Some_vt(sc) = ar.subcommand
+  val+@$SC.SC(s) = sc
+   val opt = get_short_and_long(s.args_map, g1ofg0 key)
+  prval() = fold@(sc)
+  prval() = fold@(ar.subcommand)
    val key1 = (case+ opt of
    | ~Some_vt(p) => copy(p.0)
    | ~None_vt() => copy(key)
@@ -173,7 +180,11 @@ val res = (case+ ls of
 implement {a} get_values(args, key) = res where {
    val+ @ARGS(ar) = args
    // always use the long name
-   val opt = get_short_and_long(ar.args_map, g1ofg0 key)
+  val-@Some_vt(sc) = ar.subcommand
+  val+@$SC.SC(s) = sc
+   val opt = get_short_and_long(s.args_map, g1ofg0 key)
+  prval() = fold@(sc)
+  prval() = fold@(ar.subcommand)
    val key1 = (case+ opt of
    | ~Some_vt(p) => copy(p.0)
    | ~None_vt() => copy(key)
@@ -235,7 +246,11 @@ implement{} print_help(args) = () where {
     prval() = fold@(it)
   }
   val () = println!("FLAGS:")
-  val () = linmap_foreach(ar.args_map)
+  val-~Some_vt(sc) = linmap_takeout_opt(ar.command_map, "")
+  val+@$SC.SC(s) = sc
+  val () = linmap_foreach(s.args_map)
+  prval() = fold@(sc)
+  val-~None_vt() = linmap_insert_opt(ar.command_map, "", sc)
   val () = println!("  -h, --help\tThis help message")
   prval () = fold@(args)
 }
@@ -246,7 +261,9 @@ vtypedef arg_pair = @(string, Option_vt(string))
 fn{} get_all_required(args: !Args): List0_vt(arg_pair) = res where {
   val @ARGS(ar) = args
   var res: List0_vt(arg_pair) = list_vt_nil()
-  val () = linmap_foreach_env<string, Arg><List0_vt(arg_pair)>(ar.args_map, res) where {
+  val-@Some_vt(sc) = ar.subcommand
+  val+@$SC.SC(s) = sc
+  val () = linmap_foreach_env<string, Arg><List0_vt(arg_pair)>(s.args_map, res) where {
     implement linmap_foreach$fwork<string, Arg><List0_vt(arg_pair)>(k, arg, list) = () where {
       val+ @A(a) = arg
       val () = if(a.required) then () where {
@@ -261,6 +278,8 @@ fn{} get_all_required(args: !Args): List0_vt(arg_pair) = res where {
       prval() = fold@(arg)
     }
   }
+  prval() = fold@(sc)
+  prval() = fold@(ar.subcommand)
   prval() = fold@(args)
 }
 
@@ -363,7 +382,9 @@ fn{} validate_args_that_need_values(args: !Args): arg_result = res where {
   val @ARGS(ar) = args
   vtypedef env = @{ captured=$HT.hashtbl(strptr, List_vt(strptr)), res=arg_result }
   var envir: env = @{ captured=ar.captured_args, res=Ok(()) }
-  val () = linmap_foreach_env<string, Arg><env>(ar.args_map, envir) where {
+  val-@Some_vt(sc) = ar.subcommand
+  val+@$SC.SC(s) = sc
+  val () = linmap_foreach_env<string, Arg><env>(s.args_map, envir) where {
     implement linmap_foreach$fwork<string, Arg><env>(k, arg, envir) = () where {
       val+ @A(a) = arg
       val () = if a.needs_value && ~has_value(envir.captured, a.name, a.short) then () where {
@@ -385,6 +406,8 @@ fn{} validate_args_that_need_values(args: !Args): arg_result = res where {
   }
   val () = ar.captured_args := envir.captured
   val res = envir.res
+  prval() = fold@(sc)
+  prval() = fold@(ar.subcommand)
   prval() = fold@args
 }
 
@@ -400,7 +423,9 @@ case+ res of
 
 fn{} add_prog_name(args: !Args, name: string): void = () where {
   val+ @ARGS(ar) = args
-  val-~None_vt() = ar.captured_prog_name
+  val () = case+ ar.captured_prog_name of
+  | ~Some_vt _ => ()
+  | ~None_vt() => ()
   val () = ar.captured_prog_name := Some_vt name
   prval() = fold@(args)
 }
@@ -458,3 +483,36 @@ implement string_to_value<strptr>(v) = let
 in
   Some_vt(s)
 end
+
+implement{} add_subcommand(args, subcommand) = {
+  val+@ARGS(a) = args
+  val+@$SC.SC(sc) = subcommand
+  val key = sc.command
+  prval() = fold@subcommand
+  val () = linmap_insert_any(a.command_map, key, subcommand)
+  prval() = fold@args
+}
+
+implement{a} get_command(args) = res where {
+  val+@ARGS(a) = args
+  val res = (case+ a.captured_command of
+  | @None_vt() => None_vt() where {
+    prval () = fold@(a.captured_command)
+  }
+  | @Some_vt(c) => res where {
+    val res = command_from_string<a>(c)
+    prval () = fold@(a.captured_command)
+  }): Option_vt(a)
+  prval() = fold@args
+}
+
+implement{} is_subcommand(args, cmd) = res where {
+  val+@ARGS(a) = args
+  val opt = linmap_takeout_opt(a.command_map, cmd)
+  val res = case+ opt of
+  | ~Some_vt(map) => true where {
+    val-~None_vt() = linmap_insert_opt(a.command_map, cmd, map)
+  }
+  | ~None_vt() => false
+  prval() = fold@args
+}

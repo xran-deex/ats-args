@@ -4,18 +4,21 @@ staload "libats/SATS/linmap_list.sats"
 #include "hashtable-vt/hashtable_vt.hats"
 staload "ats-result/src/SATS/result.sats"
 staload "./../SATS/arg.sats"
+staload "./../SATS/subcommand.sats"
 
 absvtype Args_vtype
 vtypedef Args = Args_vtype
 
 vtypedef args_struct =
     @{ 
-        args_map=map(string, Arg),
+        subcommand=Option_vt(SubCommand),
+        command_map=map(string, SubCommand),
         prog_name=string,
         author=string,
         about=string,
         version=string,
         captured_args=$HT.hashtbl(strptr, List_vt(strptr)),
+        captured_command=Option_vt(strptr),
         has_all_required=bool,
         captured_prog_name=Option_vt(string)
     }
@@ -36,7 +39,7 @@ fn{} set_about(args: !Args, about: string): void
 
 fn{} set_version(args: !Args, version: string): void
 
-fn{} add_arg{a:type}(args: !Args >> _, arg: Arg): void
+fn{} add_arg(args: !Args, arg: Arg): void
 
 fn{} free_args(args: Args): void
 
@@ -60,3 +63,11 @@ overload print with print_help
 fn {a:vt@ype} get_parsed(args: !Args): a 
 
 fn{} handle_error(args: !Args, err: ArgError): void
+
+fn{} add_subcommand(args: !Args, sc: SubCommand): void
+
+fn{a:type} get_command(args: !Args): Option_vt(a)
+
+fn{a:t@ype} command_from_string(cmd: !strptr): Option_vt(a)
+
+fn{} is_subcommand(args: !Args, cmd: string): bool

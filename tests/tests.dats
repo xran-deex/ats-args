@@ -12,11 +12,11 @@ implement tostring<string>(x) = copy(x)
 
 assume argv_int_vtype(n) = arrayptr(string, n)
 
-fn test1(c: !Context): void = () where {
+fn test1(c: &Context): void = () where {
 
     val args = $ARGS.new_args("")
 
-    val ls = (arrayptr)$arrpsz{string} ("prog", "aaaaa")
+    val ls = (arrayptr)$arrpsz{string} ("prog", "--aaaaa")
     val res = $ARGS.parse(args, 2, ls)
     val () = free(ls)
 
@@ -27,11 +27,11 @@ fn test1(c: !Context): void = () where {
     val () = $ARGS.free_args(args)
 }
 
-fn test2(c: !Context): void = () where {
+fn test2(c: &Context): void = () where {
 
     val args = $ARGS.new_args("")
 
-    val ls = (arrayptr)$arrpsz{string} ("prog", "aaaaa")
+    val ls = (arrayptr)$arrpsz{string} ("prog", "--aaaaa")
     val res = $ARGS.parse(args, 2, ls)
     val @$ARGS.ARGS(a) = args
     val-@Some_vt(n) = a.captured_prog_name
@@ -47,7 +47,7 @@ fn test2(c: !Context): void = () where {
     val () = $ARGS.free_args(args)
 }
 
-fn test3(c: !Context): void = () where {
+fn test3(c: &Context): void = () where {
 
     val args = $ARGS.new_args("")
     val arg = $ARG.new_arg("x", "")
@@ -68,7 +68,7 @@ fn test3(c: !Context): void = () where {
     val () = $ARGS.free_args(args)
 }
 
-fn test4(c: !Context): void = () where {
+fn test4(c: &Context): void = () where {
 
     val args = new_args("")
     val arg = new_arg("test", "")
@@ -89,7 +89,7 @@ fn test4(c: !Context): void = () where {
     val () = free_args(args)
 }
 
-fn test5(c: !Context): void = () where {
+fn test5(c: &Context): void = () where {
 
     val args = new_args("")
     val arg = new_arg("test", "")
@@ -112,7 +112,7 @@ fn test5(c: !Context): void = () where {
     val () = free_args(args)
 }
 
-fn test6(c: !Context): void = () where {
+fn test6(c: &Context): void = () where {
 
     val args = new_args("")
     val arg = new_arg("test", "")
@@ -138,7 +138,7 @@ fn test6(c: !Context): void = () where {
     val () = free_args(args)
 }
 
-fn test7(c: !Context): void = () where {
+fn test7(c: &Context): void = () where {
 
     val args = new_args("")
     val arg = new_arg("test", "")
@@ -156,6 +156,63 @@ fn test7(c: !Context): void = () where {
     val () = free_args(args)
 }
 
+fn test8(c: &Context): void = () where {
+    val args = new_args("")
+    val arg = new_arg("test", "")
+    val () = arg.set_short("t")
+    val () = make_required(arg)
+    val () = set_needs_value(arg)
+    val sc = $SC.new_subcommand("cmd")
+    val () = $SC.add_arg(sc, arg)
+    val () = add_subcommand(args, sc)
+    val ls = (arrayptr)$arrpsz{string} ("prog", "cmd", "-t", "1", "2")
+    val-~Ok(_) = parse(args, 5, ls)
+    val () = free(ls)
+
+    val nums = get_values<int>(args, "test")
+    val () = assert_equals1<int>(c, 2, list_vt_length(nums))
+    vtypedef state = @{c=Context, i=int}
+    var st = @{ c=c, i=1 }: state
+    val () = list_vt_foreach_env<int><state>(nums, st) where {
+        implement list_vt_foreach$fwork<int><state>(n, e) = {
+            val () = assert_equals1<int>(e.c, e.i, n)
+            val () = e.i := e.i + 1
+        }
+    }
+    val () = c := st.c
+    val () = free(nums)
+    val () = free_args(args)
+}
+
+fn test9(c: &Context): void = () where {
+    val args = new_args("")
+    val arg = new_arg("test", "")
+    val arg2 = new_arg("test2", "")
+    val () = arg.set_short("t")
+    val () = make_required(arg)
+    val () = set_needs_value(arg)
+    val sc = $SC.new_subcommand("cmd")
+    val () = $SC.add_arg(sc, arg)
+    val sc2 = $SC.new_subcommand("other")
+    val () = $SC.add_arg(sc2, arg2)
+    val () = add_subcommand(args, sc)
+    val () = add_subcommand(args, sc2)
+    val ls = (arrayptr)$arrpsz{string} ("prog", "cmd", "-t", "2")
+    val-~Ok(_) = parse(args, 4, ls)
+    val () = free(ls)
+
+    val-~Some_vt(num) = get_value<int>(args, "test")
+    val () = assert_equals1<int>(c, 2, num)
+
+    val ls = (arrayptr)$arrpsz{string} ("prog", "other", "--test2", "2")
+    val-~Ok(_) = parse(args, 4, ls)
+    val () = free(ls)
+
+    val-~Some_vt(num) = get_value<int>(args, "test2")
+    val () = assert_equals1<int>(c, 2, num)
+    val () = free_args(args)
+}
+
 implement main(argc, argv) = 0 where {
     val r = create_runner()
     val s = create_suite("ats-args tests")
@@ -167,6 +224,8 @@ implement main(argc, argv) = 0 where {
     val () = add_test(s, "test5", test5)
     val () = add_test(s, "test6 - get_value by long or short works", test6)
     val () = add_test(s, "test7 - get_values returns a list", test7)
+    val () = add_test(s, "test8 - subcommand", test8)
+    val () = add_test(s, "test9 - multiple subcommands", test9)
 
     val () = add_suite(r, s)
     val () = run_tests(r)

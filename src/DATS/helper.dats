@@ -16,6 +16,7 @@ implement{} debug() = res where {
 }
 
 implement{} get_dash_type(arg) = let
+  val arg = g1ofg0 arg
   val () = assertloc(string_length(arg) > 0)
   val dash1 = eq_char0_char0(string_get_at(arg, 0), '-')
   val dash2 = (if string_length(arg) > 1 then eq_char0_char0(string_get_at(arg, 1), '-') else false): bool
@@ -28,8 +29,9 @@ in
   | false => None()
 end
 
-implement{} get_arg_name(arg1, dashtype) =
-  (case dashtype of
+implement{} get_arg_name(arg1, dashtype) = an where {
+  val arg1 = g1ofg0 arg1
+  val an = (case dashtype of
   | ~Single() => res where {
       val start = i2sz(1)
       val len = string1_length(arg1)
@@ -48,6 +50,7 @@ implement{} get_arg_name(arg1, dashtype) =
   | ~None() => res where {
       val res = string0_copy(arg1)
   }): strptr
+}
 
 implement{} get_short_and_long(maps, arg) = env where {
     var env: Option_vt(pair) = None_vt()
@@ -71,16 +74,17 @@ implement{} get_short_and_long(maps, arg) = env where {
     }
 }
 
-implement{} get_arg_for_position(args, pos) = opt where {
+implement{} get_arg_for_position(args, pos, cmd) = opt where {
   vtypedef state = @{ key=Option_vt(string), pos=int }
   var key: state = @{ key=None_vt(), pos=pos }
+  val offset = (if option_vt_is_some(cmd) then 2 else 1): int
   val arg = linmap_foreach_env<string,Arg><state>(args, key) where {
     implement linmap_foreach$fwork<string,Arg><state>(k, v, e) = {
       val+@A(a) = v
       val () = case+ a.position of
-      | @NoPos() => fold@(a.position)
-      | @Pos(p) => fold@(a.position) where {
-        val () = if p = e.pos then {
+      | @None_vt() => fold@(a.position)
+      | @Some_vt(p) => fold@(a.position) where {
+        val () = if p = e.pos - offset then {
           val-~None_vt() = e.key
           val () = e.key := Some_vt(a.name)
         }

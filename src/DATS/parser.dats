@@ -20,13 +20,15 @@ vtypedef state = @{
     capturing = Option_vt(strptr),
     captured = $HT.hashtbl(strptr, List_vt(strptr)),
     print_help_request = bool,
-    pos = int
+    pos = int,
+    captured_command = Option_vt(strptr)
 }
 
 implement list_vt_freelin$clear<strptr>(x) = free(x)
 implement fprint_ref<strptr>(o, n) = print!(n)
 
-fn{} has_dash{n:nat}(str: string(n)): bool = res where {
+fn{} has_dash(str: string): bool = res where {
+    val str = g1ofg0 str
     val strlen = string1_length(str)
     val head = if strlen > 0 then string_get_at(str, 0) else ' '
     val res = case+ strlen of
@@ -117,7 +119,7 @@ case+ opt of
 }
 | ~None_vt() => list_vt_cons(arg, list_vt_nil())
 
-fn{} handle_captured_position{n:nat}(captured: !$HT.hashtbl(strptr, List_vt(strptr)), opt: Option_vt(string), arg: string(n)): void = {
+fn{} handle_captured_position(captured: !$HT.hashtbl(strptr, List_vt(strptr)), opt: Option_vt(string), arg: string): void = {
     val () = case+ opt of
     | ~None_vt() => ()
     | ~Some_vt(s) when ~has_dash(arg) => {
@@ -136,10 +138,16 @@ fn{} handle_captured_position{n:nat}(captured: !$HT.hashtbl(strptr, List_vt(strp
     | ~Some_vt _ => ()
 }
 
-fn{} process_arg{n:nat}(args: &state, arg: string(n)): void = () where {
+fn{} process_arg(args: &state, arg: string): void = () where {
     val hasDash = has_dash(arg)
-    val () = println!(arg)
-    val opt = get_arg_for_position(args.args, args.pos)
+    // val () = if args.pos = 1 && ~hasDash then {
+    //     val () = case+ args.captured_command of
+    //     | ~Some_vt s => free(s)
+    //     | ~None_vt() => ()
+    //     val is_cmd = is_subcommand()
+    //     val () = args.captured_command := Some_vt(copy(arg))
+    // }
+    val opt = get_arg_for_position(args.args, args.pos, args.captured_command)
     val () = handle_captured_position(args.captured, opt, arg)
     val () = args.pos := args.pos + 1
     var env: argnext = @{ arg=string0_copy(arg), capturing=args.capturing, captured=args.captured, help_found=false }
@@ -201,34 +209,48 @@ case+ printHelp of
 | true => Error(PrintHelp)
 | false => Ok(())
 
-implement{} gatherLoop(acc, argc, argv, cur) = () where {
-    val arg = g1ofg0 argv[cur]
-    val () = acc := list_vt_cons(arg, acc)
-    val () = if cur < argc-1 then gatherLoop(acc, argc, argv, cur+1) else ()
-}
-
-implement{} gatherArgsIntoList(argc, argv) = res where {
-    var r = list_vt_nil()
-    val () = gatherLoop(r, argc, argv, 1)
-    val res = list_vt_reverse(r)
-}
-
 vtypedef envi = @{
     args=Args
 }
 
-implement list_vt_foreach$fwork<[n:nat] string(n)><state>(itm, env) = process_arg(env, itm)
+implement list_vt_foreach$fwork<string><state>(itm, env) = process_arg(env, itm)
 
 implement{} parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
-    // map the args array to a string(n) list
-    val arg_list = gatherArgsIntoList(argc, argv)
-    var st: state = @{ args = ar.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false, pos = 1 }
-    val () = list_vt_foreach_env<[n:nat] string(n)><state>(arg_list, st)
+    val ~list_vt_cons(prog, arg_list) = listize_argc_argv(argc, argv)
+    var key: string
+    var subc = (if list_vt_length(arg_list) > 0 then map where {
+        val () = key := arg_list[0]
+        val () = if has_dash(key) then key := ""
+        val map = (case+ linmap_takeout_opt(ar.command_map, key) of
+        | ~Some_vt(map) => map where {
+            val () = case+ ar.captured_command of
+            | ~Some_vt s => free(s)
+            | ~None_vt() => ()
+            val () = ar.captured_command := Some_vt(copy(key))
+        }
+        | ~None_vt() => map where {
+            val-~Some_vt(map) = linmap_takeout_opt(ar.command_map, "")
+        }): $SC.SubCommand
+    } else map where {
+        val () = key := ""
+        val-~Some_vt(map) = linmap_takeout_opt(ar.command_map, key)
+    }): $SC.SubCommand
+    val () = case+ ar.subcommand of
+    | ~Some_vt sc => $SC.free_subcommand(sc)
+    | ~None_vt() => ()
+    val () = ar.subcommand := Some_vt(subc)
+    val-@Some_vt(sc) = ar.subcommand
+    val+@$SC.SC(s) = sc
+    var st: state = @{ args = s.args_map, capturing = None_vt(), captured=ar.captured_args, print_help_request=false, pos = 1, captured_command=ar.captured_command }
+    val () = list_vt_foreach_env<string><state>(arg_list, st)
     val () = list_vt_free(arg_list)
     val () = free_capturing(st.capturing)
     val () = ar.captured_args := st.captured
-    val () = ar.args_map := st.args
+    val () = s.args_map := st.args
+    val () = ar.captured_command := st.captured_command
+    prval () = fold@sc
+    prval () = fold@(ar.subcommand)
     prval() = fold@args
     val res = help_or_ok(st.print_help_request)
 }

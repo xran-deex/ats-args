@@ -14,7 +14,7 @@ vtypedef arg_struct = @{
     short=Option_vt(string),
     required=bool,
     needs_value=bool,
-    position=Position
+    position=Option_vt(int)
     // arg_type=ArgType
 }
 
@@ -23,7 +23,7 @@ datavtype Arg =
 
 fn{} new_arg(name: string, desc: string): Arg
 
-// fn new_arg_with_type(name: string, desc: string, type: ArgType): Arg
+fn{} free_arg(arg: Arg):<!wrt> void
 
 fn{} make_required(arg: !Arg): void
 
@@ -31,7 +31,8 @@ fn{} set_short(arg: !Arg, short: string): void
 
 fn{} set_needs_value(arg: !Arg): void
 
-fn{} set_position(arg: !Arg, pos: Position): void
+fn{} set_position{n:nat}(arg: !Arg, pos: int(n)): void
 
-symintr .set_short
+symintr .set_short .set_position
 overload .set_short with set_short
+overload .set_position with set_position

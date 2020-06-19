@@ -3,14 +3,9 @@
 staload $ARG 
 
 implement{} new_arg(name, desc) = arg where {
-  val y = @{ name=name, description=desc, short=None_vt(), required=false, needs_value=false, position=NoPos() }
+  val y = @{ name=name, description=desc, short=None_vt(), required=false, needs_value=false, position=None_vt() }
   val arg = A(y)
 }
-
-// implement new_arg_with_type(name, desc, typ) = arg where {
-//   val y = @{ name=name, description=desc, short=None_vt(), required=false, arg_type=typ }
-//   val arg = A(y)
-// }
 
 implement{} make_required(arg) = () where {
   val @A(ar) = arg
@@ -30,9 +25,9 @@ implement{} set_short(arg, short) = () where {
 implement{} set_position(arg, pos) = () where {
   val @A(ar) = arg
   val () = case ar.position of
-  | ~NoPos() => ()
-  | ~Pos _ => ()
-  val () = ar.position := pos
+  | ~None_vt() => ()
+  | ~Some_vt _ => ()
+  val () = ar.position := Some_vt(pos)
   prval () = fold@(arg)
 }
 
@@ -41,3 +36,16 @@ implement{} set_needs_value(arg) = () where {
   val () = ar.needs_value := true
   prval () = fold@(arg)
 }
+
+implement{} free_arg(arg) =
+case arg of
+| ~A(a) => () where {
+  val () = case a.short of
+  | ~Some_vt(_) => ()
+  | ~None_vt() => ()
+  val () = case a.position of
+  | ~None_vt() => ()
+  | ~Some_vt(_) => ()
+}
+
+implement linmap_freelin$clear<Arg>(x) = free_arg(x)

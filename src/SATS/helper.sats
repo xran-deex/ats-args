@@ -11,12 +11,12 @@ datavtype dash_type =
 
 fn{} debug(): bool
 
-fn{} get_dash_type{n:int}(arg: string(n)): dash_type 
+fn{} get_dash_type(arg: string): dash_type 
 
-fn{} get_arg_name{m:nat }(arg1: string(m), dashtype: dash_type): strptr
+fn{} get_arg_name(arg1: string, dashtype: dash_type): strptr
 
 typedef pair = @(string,string)
 
 fn{} get_short_and_long{n:int}(maps: !map(string, Arg), arg: string(n)): Option_vt(pair)
 
-fn{} get_arg_for_position(args: !map(string, Arg), pos: int): Option_vt(string)
+fn{} get_arg_for_position(args: !map(string, Arg), pos: int, cmd: !Option_vt(strptr)): Option_vt(string)
