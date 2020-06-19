@@ -44,7 +44,7 @@ $(OBJDIR)/%.o: %.c
 	$(dir_guard)
 	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)/$(@F)
 
-$(OBJDIR)/%.c: %.dats
+$(OBJDIR)/%.c: %.dats node_modules
 	$(dir_guard)
 	$(ATSOPT) $(ATSFLAGS) -o $(OBJDIR)/$(@F) -d $<
 
@@ -54,9 +54,16 @@ clean:
 	$(RMF) $(EXEDIR)/$(APP)
 	$(RMF) $(OBJS)
 	+make -C tests clean
+	+make -C examples clean
+
+node_modules:
+	npm install
 
 buildall: all
 	+make -C tests
 
 test: buildall
 	+make -C tests run
+
+examples: all
+	+make -C examples
