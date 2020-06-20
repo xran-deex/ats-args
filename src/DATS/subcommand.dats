@@ -1,7 +1,7 @@
 #include "./../HATS/includes.hats"
 staload UN = "prelude/SATS/unsafe.sats"
-staload _ = "../src/DATS/arg.dats"
-staload "../src/SATS/subcommand.sats"
+staload _ = "./../DATS/arg.dats"
+staload "./../SATS/subcommand.sats"
 #define ATS_DYNLOADFLAG 0
 
 implement free_subcommand(sc) = {

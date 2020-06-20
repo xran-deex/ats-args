@@ -5,5 +5,5 @@ steps:
 - name: build
   image: ubuntu-netfu:5000/ats:0.4.0-npm
   commands:
-    - make examples
-    - make test
+  - make examples
+  - make test
