@@ -8,7 +8,8 @@ staload "./../SATS/arg.sats"
 vtypedef subcommand_struct =
     @{
         args_map=map(string, Arg),
-        command=string
+        command=string,
+        description=string
     }
 
 datavtype SubCommand =
@@ -18,6 +19,6 @@ fn free_subcommand(sc: SubCommand):<!wrt> void
 
 fn get_command(sc: !SubCommand): string
 
-fn new_subcommand(name: string): SubCommand
+fn new_subcommand(name: string, desc: string): SubCommand
 
 fn add_arg(sc: !SubCommand, arg: Arg): void

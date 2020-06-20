@@ -11,11 +11,12 @@ implement free_subcommand(sc) = {
 
 implement linmap_freelin$clear<SubCommand>(x) = free_subcommand(x)
 
-implement new_subcommand(name) = sc where {
+implement new_subcommand(name, desc) = sc where {
     val sc = SC(_)
     val SC(s) = sc
     val () = s.args_map := linmap_nil()
     val () = s.command := name
+    val () = s.description := desc
     prval () = fold@sc
 }
 

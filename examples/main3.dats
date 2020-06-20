@@ -9,8 +9,8 @@ datatype Command =
 
 fn get_args(): Args = args where {
     val args = new_args("Main3")
-    val sc = $SC.new_subcommand("get")
-    val sc2 = $SC.new_subcommand("do")
+    val sc = $SC.new_subcommand("get", "get something")
+    val sc2 = $SC.new_subcommand("do", "do something")
     val a1 = new_arg("a1", "")
     val () = a1.set_short("a")
     val () = set_position(a1, 0)

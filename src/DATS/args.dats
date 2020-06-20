@@ -14,7 +14,7 @@ implement{} new_args(prog_name) = args where {
   val ARGS(x) = args 
   val () = x.subcommand := None_vt()
   val () = x.command_map := linmap_nil()
-  val () = linmap_insert_any(x.command_map, "", $SC.new_subcommand(""))
+  val () = linmap_insert_any(x.command_map, "", $SC.new_subcommand("", ""))
   val () = x.prog_name := prog_name
   val () = x.about := ""
   val () = x.author := ""
@@ -219,7 +219,7 @@ fn{} get_prog_name(ar: !args_struct): string = res where {
     }
 }
 
-implement{} print_help(args) = () where {
+implement{} print_help(args) = {
   val+ @ARGS(ar) = args
   val () = maybe_print(ar.prog_name)
   val () = maybe_print(ar.author)
@@ -227,11 +227,17 @@ implement{} print_help(args) = () where {
   val () = maybe_print(ar.version)
   val () = println!()
   val () = println!("USAGE:")
-  val () = println!("\t", get_prog_name ar, " [FLAGS]")
-  implement (env)
-  linmap_foreach$fwork<string, Arg><env>(k, it, e) = () where {
+  val-@Some_vt(sc) = ar.subcommand
+  val+@$SC.SC(s) = sc
+  val cmd = s.command
+  prval () = fold@(sc)
+  prval () = fold@(ar.subcommand)
+  val show_cmd = (if cmd = "" then "[CMD]" else cmd): string
+  val () = println!("\t", get_prog_name ar, " ", show_cmd, " [FLAGS]")
+  implement
+  linmap_foreach$fwork<string, Arg><string>(k, it, e) = {
     val+ @A(x) = it
-    val () = print!("  ")
+    val () = print!(e, "  ")
     val () = case x.short of
     | @Some_vt(s) => (print!("-", s, ", ");fold@(x.short))
     | @None_vt() => (fold@(x.short))
@@ -246,12 +252,37 @@ implement{} print_help(args) = () where {
     prval() = fold@(it)
   }
   val () = println!("FLAGS:")
-  val-~Some_vt(sc) = linmap_takeout_opt(ar.command_map, "")
+  // print the default flags
+  val-@Some_vt(sc) = ar.subcommand
   val+@$SC.SC(s) = sc
-  val () = linmap_foreach(s.args_map)
-  prval() = fold@(sc)
-  val-~None_vt() = linmap_insert_opt(ar.command_map, "", sc)
+  var spacing: string = ""
+  val () = linmap_foreach_env<string,Arg><string>(s.args_map, spacing)
+  val cmd = s.command
+  prval () = fold@(sc)
+  prval () = fold@(ar.subcommand)
   val () = println!("  -h, --help\tThis help message")
+  // print each subcommand
+  val () = if cmd = "" then {
+    val ls = linmap_listize(ar.command_map)
+    var e = linmap_nil()
+    val () = println!()
+    val () = println!("SUBCOMMANDS:")
+    fun loop(ls: List_vt(@(string, $SC.SubCommand)), cmds: &map(string, $SC.SubCommand) >> _): void = {
+      val () = case+ ls of
+      | ~list_vt_cons(x, xs) => {
+        val+@$SC.SC(sc) = x.1
+        val () = println!("  ", x.0, "\t", sc.description)
+        var spacing: string = "  "
+        val () = linmap_foreach_env<string,Arg><string>(sc.args_map, spacing)
+        prval () = fold@(x.1)
+        val () = linmap_insert_any(cmds, x.0, x.1)
+        val () = loop(xs, cmds)
+      }
+      | ~list_vt_nil() => ()
+    }
+    val () = loop(ls, e)
+    val () = ar.command_map := e
+  }
   prval () = fold@(args)
 }
 
@@ -448,7 +479,7 @@ case- argc of
 
 implement{} handle_error(args, err) =
 case+ err of
-| ~PrintHelp() => println!(args)
+| ~PrintHelp() => print!(args)
 | ~Invalid() => println!("\033[32mInvalid\033[0m")
 | ~MissingValues v => () where {
   val () = println!("Some arguments are missing required values: \033[31m", v, "\033[0m")
