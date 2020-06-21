@@ -1,7 +1,7 @@
 {
   "name": "ats-args",
   "version": "1.0.0",
-  "description": "[![Build Status](http://ubuntu-netfu.lan:4000/api/badges/randy.valis/ats-args/status.svg?ref=refs/heads/master)](http://ubuntu-netfu.lan:4000/randy.valis/ats-args) # ats-args An argument parsing library written in ATS2",
+  "description": "A library for writing CLI apps in ATS2",
   "main": "N/A",
   "scripts": {
     "test": "make test"
@@ -9,11 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ats-result": "git+http://git@ubuntu-netfu.lan:3000/randy.valis/ats-result",
-    "hashtable-vt": "git+http://ubuntu-netfu:3000/randy.valis/ats-hashtable-vt"
+    "ats-result": "git+https://github.com/xran-deex/ats-result#v0.1.0",
+    "hashtable-vt": "git+https://github.com/xran-deex/ats-hashtable-vt#v0.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "http://ubuntu-netfu.lan:3000/randy.valis/ats-args"
+    "url": "https://github.com/xran-deex/ats-args"
   }
 }
