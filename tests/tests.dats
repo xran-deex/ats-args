@@ -220,7 +220,7 @@ fn test10(c: &Context): void = () where {
     val () = $SC.add_arg(sc, arg)
     val () = add_subcommand(args, sc)
     val ls = (arrayptr)$arrpsz{string} ("prog", "--help")
-    val-~Error(err) = parse(args, 3, ls)
+    val-~Error(err) = parse(args, 2, ls)
     val () = free(ls)
 
     val () = free_error(err)
