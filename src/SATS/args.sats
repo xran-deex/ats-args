@@ -64,6 +64,8 @@ fn {a:vt@ype} get_parsed(args: !Args): a
 
 fn{} handle_error(args: !Args, err: ArgError): void
 
+fn{} free_error(err: ArgError): void
+
 fn{} add_subcommand(args: !Args, sc: SubCommand): void
 
 fn{a:type} get_command(args: !Args): Option_vt(a)

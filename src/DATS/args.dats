@@ -490,6 +490,13 @@ case+ err of
   val () = list_vt_freelin(m)
 }
 
+implement{} free_error(err) =
+case+ err of
+| ~PrintHelp() => ()
+| ~Invalid() => ()
+| ~MissingValues v => list_vt_freelin(v)
+| ~MissingRequired m => list_vt_freelin(m)
+
 implement string_to_value<int>(v) = let
   val tmp = g1string2int($UNSAFE.castvwtp1{string}(v))
 in

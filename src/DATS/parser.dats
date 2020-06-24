@@ -140,13 +140,6 @@ fn{} handle_captured_position(captured: !$HT.hashtbl(strptr, List_vt(strptr)), o
 
 fn{} process_arg(args: &state, arg: string): void = () where {
     val hasDash = has_dash(arg)
-    // val () = if args.pos = 1 && ~hasDash then {
-    //     val () = case+ args.captured_command of
-    //     | ~Some_vt s => free(s)
-    //     | ~None_vt() => ()
-    //     val is_cmd = is_subcommand()
-    //     val () = args.captured_command := Some_vt(copy(arg))
-    // }
     val opt = get_arg_for_position(args.args, args.pos, args.captured_command)
     val () = handle_captured_position(args.captured, opt, arg)
     val () = args.pos := args.pos + 1
@@ -219,8 +212,11 @@ implement{} parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
     val ~list_vt_cons(prog, arg_list) = listize_argc_argv(argc, argv)
     var key: string
+    var print_help_request: bool = false
+    // subcommand handling - TODO - clean this up
     var subc = (if list_vt_length(arg_list) > 0 then map where {
         val () = key := arg_list[0]
+        val () = if key = "-h" || key = "--help" then print_help_request := true
         val () = if has_dash(key) then key := ""
         val map = (case+ linmap_takeout_opt(ar.command_map, key) of
         | ~Some_vt(map) => map where {
@@ -252,5 +248,5 @@ implement{} parse_args(args, argc, argv) = res where {
     prval () = fold@sc
     prval () = fold@(ar.subcommand)
     prval() = fold@args
-    val res = help_or_ok(st.print_help_request)
+    val res = help_or_ok(print_help_request || st.print_help_request)
 }

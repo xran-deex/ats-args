@@ -213,6 +213,23 @@ fn test9(c: &Context): void = () where {
     val () = free_args(args)
 }
 
+fn test10(c: &Context): void = () where {
+    val args = new_args("")
+    val arg = new_arg("test", "")
+    val sc = $SC.new_subcommand("cmd", "a subcommand")
+    val () = $SC.add_arg(sc, arg)
+    val () = add_subcommand(args, sc)
+    val ls = (arrayptr)$arrpsz{string} ("prog", "--help")
+    val-~Error(err) = parse(args, 3, ls)
+    val () = free(ls)
+
+    val () = free_error(err)
+
+    val () = assert_true(c, true)
+
+    val () = free_args(args)
+}
+
 implement main(argc, argv) = 0 where {
     val r = create_runner()
     val s = create_suite("ats-args tests")
@@ -226,6 +243,7 @@ implement main(argc, argv) = 0 where {
     val () = add_test(s, "test7 - get_values returns a list", test7)
     val () = add_test(s, "test8 - subcommand", test8)
     val () = add_test(s, "test9 - multiple subcommands", test9)
+    val () = add_test(s, "test10 - subcommand only prints help", test10)
 
     val () = add_suite(r, s)
     val () = run_tests(r)
