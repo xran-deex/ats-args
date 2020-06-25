@@ -242,7 +242,10 @@ implement{} print_help(args) = {
     | @Some_vt(s) => (print!("-", s, ", ");fold@(x.short))
     | @None_vt() => (fold@(x.short))
     val () = print!("--", x.name)
-    val () = print!("\t", x.description)
+    val () = if x.description != "" then print!("\t", x.description)
+    val () = case x.position of
+    | @Some_vt(pos) => (print!("\tPosition: ", pos);fold@(x.position))
+    | @None_vt() => fold@(x.position)
     val () = case x.required of
     | true => print!("\t(required)")
     | false => print!()
