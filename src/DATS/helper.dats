@@ -1,13 +1,15 @@
 #include "share/atspre_define.hats"
 #include "share/atspre_staload.hats"
 staload "libats/libc/SATS/stdlib.sats"
+staload _ = "libats/libc/DATS/stdlib.dats"
 staload "./../SATS/helper.sats"
 staload "libats/SATS/linmap_list.sats"
+staload _ = "libats/DATS/linmap_list.dats"
 staload "./../SATS/arg.sats"
 staload "./../SATS/args.sats"
 #define ATS_DYNLOADFLAG 0
 
-implement{} debug() = res where {
+implement debug() = res where {
     val DEBUG = getenv_gc("DEBUG")
     val res = if isneqz(DEBUG) then res where {
       val res = DEBUG = "1" || DEBUG = "true"
@@ -15,7 +17,7 @@ implement{} debug() = res where {
     val () = free(DEBUG)
 }
 
-implement{} get_dash_type(arg) = let
+implement get_dash_type(arg) = let
   val arg = g1ofg0 arg
   val () = assertloc(string_length(arg) > 0)
   val dash1 = eq_char0_char0(string_get_at(arg, 0), '-')
@@ -29,7 +31,7 @@ in
   | false => None()
 end
 
-implement{} get_arg_name(arg1, dashtype) = an where {
+implement get_arg_name(arg1, dashtype) = an where {
   val arg1 = g1ofg0 arg1
   val an = (case dashtype of
   | ~Single() => res where {
@@ -52,7 +54,7 @@ implement{} get_arg_name(arg1, dashtype) = an where {
   }): strptr
 }
 
-implement{} get_short_and_long(maps, arg) = env where {
+implement get_short_and_long(maps, arg) = env where {
     var env: Option_vt(pair) = None_vt()
     val () = linmap_foreach_env<string,Arg><Option_vt(pair)>(maps, env) where {
         implement linmap_foreach$fwork<string,Arg><Option_vt(pair)>(k,v,e) = {
@@ -74,7 +76,7 @@ implement{} get_short_and_long(maps, arg) = env where {
     }
 }
 
-implement{} get_arg_for_position(args, pos, cmd) = opt where {
+implement get_arg_for_position(args, pos, cmd) = opt where {
   vtypedef state = @{ key=Option_vt(string), pos=int }
   var key: state = @{ key=None_vt(), pos=pos }
   val offset = (if option_vt_is_some(cmd) then 2 else 1): int

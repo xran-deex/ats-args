@@ -2,18 +2,18 @@
 #define ATS_DYNLOADFLAG 0
 staload $ARG 
 
-implement{} new_arg(name, desc) = arg where {
+implement new_arg(name, desc) = arg where {
   val y = @{ name=name, description=desc, short=None_vt(), required=false, needs_value=false, position=None_vt() }
   val arg = A(y)
 }
 
-implement{} make_required(arg) = () where {
+implement make_required(arg) = () where {
   val @A(ar) = arg
   val () = ar.required := true
   prval() = fold@(arg)
 }
 
-implement{} set_short(arg, short) = () where {
+implement set_short(arg, short) = () where {
   val @A(ar) = arg
   val () = case ar.short of
   | ~Some_vt(_) => ()
@@ -22,7 +22,7 @@ implement{} set_short(arg, short) = () where {
   prval () = fold@(arg)
 }
 
-implement{} set_position(arg, pos) = () where {
+implement set_position(arg, pos) = () where {
   val @A(ar) = arg
   val () = case ar.position of
   | ~None_vt() => ()
@@ -31,13 +31,13 @@ implement{} set_position(arg, pos) = () where {
   prval () = fold@(arg)
 }
 
-implement{} set_needs_value(arg) = () where {
+implement set_needs_value(arg) = () where {
   val @A(ar) = arg
   val () = ar.needs_value := true
   prval () = fold@(arg)
 }
 
-implement{} free_arg(arg) =
+implement free_arg(arg) =
 case arg of
 | ~A(a) => () where {
   val () = case a.short of

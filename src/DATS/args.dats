@@ -1,5 +1,6 @@
 #include "./../HATS/includes.hats"
 #define ATS_DYNLOADFLAG 0
+staload _ = "./../DATS/subcommand.dats"
 
 staload $ARG
 staload $ARGS
@@ -8,8 +9,10 @@ vtypedef arg_result = result_vt((), ArgError)
 
 implement {a} fprint_arg(out, x) = ()
 
+implement gclear_ref<strptr>(s) = free(s)
+
 assume Args_vtype = Args
-implement{} new_args(prog_name) = args where {
+implement new_args(prog_name) = args where {
   val args = ARGS(_)
   val ARGS(x) = args 
   val () = x.subcommand := None_vt()
@@ -26,25 +29,25 @@ implement{} new_args(prog_name) = args where {
   prval () = fold@(args)
 }
 
-implement{} set_author(args, author) = () where {
+implement set_author(args, author) = () where {
   val @ARGS(x) = args 
   val () = x.author := author
   prval() = fold@(args)
 }
 
-implement{} set_about(args, about) = () where {
+implement set_about(args, about) = () where {
   val @ARGS(x) = args 
   val () = x.about := about
   prval() = fold@(args)
 }
 
-implement{} set_version(args, version) = () where {
+implement set_version(args, version) = () where {
   val @ARGS(x) = args 
   val () = x.version := version
   prval() = fold@(args)
 }
 
-implement{} add_arg(args, arg) = () where {
+implement add_arg(args, arg) = () where {
   val @ARGS(x) = args 
   val-~Some_vt(sc) = linmap_takeout_opt(x.command_map, "")
   val () = $SC.add_arg(sc, arg)
@@ -63,7 +66,7 @@ fn{} print_args(args: !Args): void = () where {
     val () = fold@(args)
 }
 
-implement{} free_args(args) = () where {
+implement free_args(args) = () where {
   val ~ARGS(x) = args
   implement $HT.hashtbl_free$clear<strptr,List_vt(strptr)>(k, v) = () where {
     val () = strptr_free(k)
@@ -219,7 +222,7 @@ fn{} get_prog_name(ar: !args_struct): string = res where {
     }
 }
 
-implement{} print_help(args) = {
+implement print_help(args) = {
   val+ @ARGS(ar) = args
   val () = maybe_print(ar.prog_name)
   val () = maybe_print(ar.author)
@@ -472,7 +475,7 @@ fn{} add_prog_name_and_print_help(args: !Args, name: string): arg_result = res w
   prval() = fold@(args)
 }
 
-implement{} parse(args, argc, argv) =
+implement parse(args, argc, argv) =
 case- argc of
 | 1 => add_prog_name_and_print_help(args, argv[0])
 | _ when argc > 1 => handle_parse_result(args, res) where {
@@ -480,7 +483,7 @@ case- argc of
   val res = parse_args(args, argc, argv)
 }
 
-implement{} handle_error(args, err) =
+implement handle_error(args, err) =
 case+ err of
 | ~PrintHelp() => print!(args)
 | ~Invalid() => println!("\033[32mInvalid\033[0m")
@@ -493,7 +496,7 @@ case+ err of
   val () = list_vt_freelin(m)
 }
 
-implement{} free_error(err) =
+implement free_error(err) =
 case+ err of
 | ~PrintHelp() => ()
 | ~Invalid() => ()
@@ -525,7 +528,7 @@ in
   Some_vt(s)
 end
 
-implement{} add_subcommand(args, subcommand) = {
+implement add_subcommand(args, subcommand) = {
   val+@ARGS(a) = args
   val+@$SC.SC(sc) = subcommand
   val key = sc.command
@@ -547,7 +550,7 @@ implement{a} get_command(args) = res where {
   prval() = fold@args
 }
 
-implement{} is_subcommand(args, cmd) = res where {
+implement is_subcommand(args, cmd) = res where {
   val+@ARGS(a) = args
   val opt = linmap_takeout_opt(a.command_map, cmd)
   val res = case+ opt of

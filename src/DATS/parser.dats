@@ -27,7 +27,7 @@ vtypedef state = @{
 implement list_vt_freelin$clear<strptr>(x) = free(x)
 implement fprint_ref<strptr>(o, n) = print!(n)
 
-fn{} has_dash(str: string): bool = res where {
+fn has_dash(str: string): bool = res where {
     val str = g1ofg0 str
     val strlen = string1_length(str)
     val head = if strlen > 0 then string_get_at(str, 0) else ' '
@@ -36,7 +36,7 @@ fn{} has_dash(str: string): bool = res where {
               | _ => false
 }
 
-fn{} free_capturing(opt: Option_vt(strptr)): void = 
+fn free_capturing(opt: Option_vt(strptr)): void = 
 case+ opt of
 | ~Some_vt(s) => free(s)
 | ~None_vt() => ()
@@ -51,7 +51,7 @@ case+ opt of
 }
 | @None_vt() => (print!("None_vt");fold@(opt))
 
-fn{} print_opt_strptr(opt: &Option_vt(strptr)): void = print_opt<strptr>(stdout_ref, opt)
+fn print_opt_strptr(opt: &Option_vt(strptr)): void = print_opt<strptr>(stdout_ref, opt)
 
 overload print with print_opt_strptr
 
@@ -59,7 +59,7 @@ implement linmap_foreach$fwork<string,List_vt(strptr)><void>(key,itm,env) = () w
     val () = print!(key, ": ", itm)
 }
 
-fn{} get_list2(opt: Option_vt(List_vt(strptr))): List0_vt(strptr) =
+fn get_list2(opt: Option_vt(List_vt(strptr))): List0_vt(strptr) =
 case+ opt of
 | ~Some_vt(ls) => res where {
     val () = assertloc(list_vt_length(ls) >= 0)
@@ -111,7 +111,7 @@ implement $LM.linmap_freelin$clear<strptr,List_vt(strptr)>(k,v) = () where {
     val () = list_vt_freelin(v)
 }
 
-fn{} get_list(opt: Option_vt(List_vt(strptr)), arg: strptr): List1_vt(strptr) =
+fn get_list(opt: Option_vt(List_vt(strptr)), arg: strptr): List1_vt(strptr) =
 case+ opt of
 | ~Some_vt(ls) => res where {
     val () = assertloc(list_vt_length(ls) >= 0)
@@ -119,7 +119,7 @@ case+ opt of
 }
 | ~None_vt() => list_vt_cons(arg, list_vt_nil())
 
-fn{} handle_captured_position(captured: !$HT.hashtbl(strptr, List_vt(strptr)), opt: Option_vt(string), arg: string): void = {
+fn handle_captured_position(captured: !$HT.hashtbl(strptr, List_vt(strptr)), opt: Option_vt(string), arg: string): void = {
     val () = case+ opt of
     | ~None_vt() => ()
     | ~Some_vt(s) when ~has_dash(arg) => {
@@ -138,7 +138,7 @@ fn{} handle_captured_position(captured: !$HT.hashtbl(strptr, List_vt(strptr)), o
     | ~Some_vt _ => ()
 }
 
-fn{} process_arg(args: &state, arg: string): void = () where {
+fn process_arg(args: &state, arg: string): void = () where {
     val hasDash = has_dash(arg)
     val opt = get_arg_for_position(args.args, args.pos, args.captured_command)
     val () = handle_captured_position(args.captured, opt, arg)
@@ -197,7 +197,7 @@ fn{} process_arg(args: &state, arg: string): void = () where {
     val () = free(env.arg)
 }
 
-fn{} help_or_ok(printHelp: bool): arg_result =
+fn help_or_ok(printHelp: bool): arg_result =
 case+ printHelp of
 | true => Error(PrintHelp)
 | false => Ok(())
@@ -208,7 +208,7 @@ vtypedef envi = @{
 
 implement list_vt_foreach$fwork<string><state>(itm, env) = process_arg(env, itm)
 
-implement{} parse_args(args, argc, argv) = res where {
+implement parse_args(args, argc, argv) = res where {
     val+@ARGS(ar) = args
     val ~list_vt_cons(prog, arg_list) = listize_argc_argv(argc, argv)
     var key: string
